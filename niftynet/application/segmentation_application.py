@@ -429,7 +429,7 @@ class SegmentationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(
-                {'window_seg':batch_output['window']}, batch_output['location'])
+                batch_output['window'], batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):

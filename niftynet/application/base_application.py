@@ -8,7 +8,7 @@ from argparse import Namespace
 import tensorflow as tf
 from six import with_metaclass
 
-from niftynet.engine.signal import TRAIN, INFER, EVAL
+from niftynet.engine.signal import TRAIN, INFER, EVAL, EXPORT
 
 APP_INSTANCE = None  # global so it can be reset
 
@@ -241,6 +241,14 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         :return: boolean value indicating if the phase is inference
         """
         return INFER.startswith(self.action)
+
+    @property
+    def is_export(self):
+        """
+
+        :return: boolean value indicating if the phase is export
+        """
+        return EXPORT.startswith(self.action)
 
     @property
     def is_evaluation(self):

@@ -16,6 +16,7 @@ from blinker import Namespace
 TRAIN = 'training'
 VALID = 'validation'
 INFER = 'inference'
+EXPORT = 'export'
 EVAL = 'evaluation'
 ALL = 'all'
 

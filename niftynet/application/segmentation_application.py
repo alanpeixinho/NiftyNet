@@ -66,6 +66,9 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
 
+        print('initialise dataset loader')
+        import pdb; pdb.set_trace()
+
         self.data_param = data_param
         self.segmentation_param = task_param
 
@@ -77,6 +80,8 @@ class SegmentationApplication(BaseApplication):
             reader_names = ('image',)
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
+        elif self.is_export:
+            reader_names = ('image',)
         else:
             tf.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
@@ -270,11 +275,15 @@ class SegmentationApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
         elif self.is_inference:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+        elif self.is_export:
+            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+
 
     def initialise_aggregator(self):
         self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
     def initialise_network(self):
+        import pdb; pdb.set_trace()
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -301,6 +310,9 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+
+        print('connect data and network')
+        import pdb; pdb.set_trace()
 
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
@@ -426,6 +438,25 @@ class SegmentationApplication(BaseApplication):
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
             self.initialise_aggregator()
+        elif self.is_export:
+            data_dict = switch_sampler(for_training=False)
+            output_prob = self.segmentation_param.output_prob
+            num_classes = self.segmentation_param.num_classes
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
+            post_process_layer = PostProcessingLayer(
+                'SOFTMAX', num_classes=num_classes)
+            net_out = post_process_layer(net_out)
+            import pdb; pdb.set_trace()
+            self.initialise_aggregator()
+
+
+
+
+
+
 
     def interpret_output(self, batch_output):
         if self.is_inference:

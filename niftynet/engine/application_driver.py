@@ -19,6 +19,8 @@ import time
 
 import tensorflow as tf
 
+from niftynet.engine.handler_model import ModelRestorer
+
 from niftynet.engine.application_factory import \
     ApplicationFactory, EventHandlerFactory, IteratorFactory
 from niftynet.engine.application_iteration import IterationMessage
@@ -193,6 +195,62 @@ class ApplicationDriver(object):
 
         with tf.Session(config=tf_config(), graph=graph):
             try:
+
+
+                import pdb; pdb.set_trace()
+
+
+                #MODEL_PATH = os.path.join(self.model_dir, 'models')
+                #snapshot_fpath = tf.train.latest_checkpoint(MODEL_PATH)
+                #sess = tf.get_default_session()
+
+        
+                # init = tf.global_variables_initializer()
+                # sess.run(init)
+
+                import re
+                # Determine which vars to
+                # restore using regex matching
+                var_regex = re.compile(self.vars_to_restore)
+                to_restore, to_randomise = [], []
+                for restorable in tf.global_variables():
+                    if var_regex.search(restorable.name):
+                        to_restore.append(restorable)
+                    else:
+                        to_randomise.append(restorable)
+
+                if not to_restore:
+                    tf.logging.fatal(
+                        'vars_to_restore specified: %s, but nothing matched.',
+                        self.vars_to_restore)
+                    assert to_restore, 'Nothing to restore (--vars_to_restore)'
+
+                snapshot_fpath = ''
+
+                var_names = [  # getting first three item to print
+                    var_restore.name for var_restore in to_restore[:3]]
+                tf.logging.info(
+                    'Restoring %s out of %s variables from %s: \n%s, ...',
+                    len(to_restore),
+                    len(tf.global_variables()),
+                    snapshot_fpath, ',\n'.join(var_names))
+                # Initialize vars to randomize
+                #init_op = tf.variables_initializer(to_randomise)
+                #tf.get_default_session().run(init_op)
+
+                #graphdef_inf = tf.graph_util.remove_training_nodes(graph.as_graph_def())
+
+                #graphdef_frozen = tf.graph_util.convert_variables_to_constants(
+                #    sess, graphdef_inf, ['worker_0/post_processing/Softmax'])
+
+
+                #import pdb; pdb.set_trace()
+                #FROZEN_GDEF_PATH = 'letitgo.pb'
+
+                #os.makedirs(os.path.dirname(FROZEN_GDEF_PATH), exist_ok=True)
+                #graph_io.write_graph(graphdef_frozen, './', FROZEN_GDEF_PATH, as_text=False)
+
+
                 # broadcasting event of session started
                 SESS_STARTED.send(application, iter_msg=None)
 

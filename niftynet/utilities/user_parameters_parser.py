@@ -10,7 +10,7 @@ import argparse
 import os
 import textwrap
 
-from niftynet.engine.signal import TRAIN, INFER, EVAL
+from niftynet.engine.signal import TRAIN, INFER, EVAL, EXPORT
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
@@ -29,7 +29,7 @@ from niftynet.utilities.util_common import \
 from niftynet.utilities.versioning import get_niftynet_version_string
 
 SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
-ACTIONS = {'train': TRAIN, 'inference': INFER, 'evaluation': EVAL}
+ACTIONS = {'train': TRAIN, 'inference': INFER, 'evaluation': EVAL, 'export': EXPORT}
 EPILOG_STRING = \
     '\n\n======\nFor more information please visit:\n' \
     'http://niftynet.readthedocs.io/en/dev/config_spec.html\n' \

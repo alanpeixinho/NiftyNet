@@ -51,7 +51,7 @@ from niftynet.utilities.util_import import require_module
 
 require_module('blinker', descriptor='New dependency', mandatory=True)
 
-from niftynet.engine.signal import TRAIN, INFER, EVAL
+from niftynet.engine.signal import TRAIN, INFER, EVAL, EXPORT
 import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
@@ -136,7 +136,8 @@ def main():
     driver_table = {
         TRAIN: ApplicationDriver,
         INFER: ApplicationDriver,
-        EVAL: EvaluationApplicationDriver}
+        EVAL: EvaluationApplicationDriver,
+        EXPORT: ApplicationDriver}
     app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run(app_driver.app)

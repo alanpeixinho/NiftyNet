@@ -304,7 +304,6 @@ class ImageSetsPartitioner(object):
                 '[%s] csv file %s not found.', modality_name, csv_file)
             raise IOError
 
-        import pdb; pdb.set_trace()
         ###############################
         # loading the file as dataframe
         ###############################
@@ -529,7 +528,6 @@ class ImageSetsPartitioner(object):
         :param phase: an element from ``{TRAIN, VALID, INFER, ALL}``
         :return:
         """
-        import pdb; pdb.set_trace()
         if phase:
             try:
                 return [self.get_file_list(phase=phase)]

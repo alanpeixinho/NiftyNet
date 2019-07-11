@@ -19,6 +19,8 @@ import time
 
 import tensorflow as tf
 
+from tensorflow.python.framework import graph_io
+
 from niftynet.engine.handler_model import ModelRestorer
 
 from niftynet.engine.application_factory import \
@@ -197,7 +199,7 @@ class ApplicationDriver(object):
             try:
 
 
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
 
 
                 #MODEL_PATH = os.path.join(self.model_dir, 'models')
@@ -238,26 +240,39 @@ class ApplicationDriver(object):
                 #init_op = tf.variables_initializer(to_randomise)
                 #tf.get_default_session().run(init_op)
 
-                #graphdef_inf = tf.graph_util.remove_training_nodes(graph.as_graph_def())
-
-                #graphdef_frozen = tf.graph_util.convert_variables_to_constants(
-                #    sess, graphdef_inf, ['worker_0/post_processing/Softmax'])
-
-
+                sess = tf.get_default_session()
                 #import pdb; pdb.set_trace()
-                #FROZEN_GDEF_PATH = 'letitgo.pb'
-
-                #os.makedirs(os.path.dirname(FROZEN_GDEF_PATH), exist_ok=True)
-                #graph_io.write_graph(graphdef_frozen, './', FROZEN_GDEF_PATH, as_text=False)
-
 
                 # broadcasting event of session started
                 SESS_STARTED.send(application, iter_msg=None)
 
-                # create a iteration message generator and
-                # iteratively run the graph (the main engine loop)
-                iteration_messages = self._generator(**vars(self))()
-                ApplicationDriver.loop(
+                graphdef_inf = tf.graph_util.remove_training_nodes(graph.as_graph_def())
+
+                if application.action == 'export':
+                    if application.action_param.frozen_model is not None:
+                        output_name = 'worker_0/post_processing/Softmax'
+                        input_name = 'worker_0/validation/IteratorGetNext'
+
+                        graphdef_frozen = tf.graph_util.convert_variables_to_constants(
+                            sess, graphdef_inf, [output_name])
+
+
+                        from tensorflow.python.tools import optimize_for_inference_lib
+
+                        graphdef_frozen = optimize_for_inference_lib.optimize_for_inference(
+                        graphdef_frozen,
+                        [input_name], # an array of the input node(s)
+                        [output_name], # an array of output nodes
+                        tf.float32.as_datatype_enum)
+
+                        #os.makedirs(os.path.dirname(FROZEN_GDEF_PATH))
+                        graph_io.write_graph(graphdef_frozen, './', application.action_param.frozen_model, as_text=False)
+                    return
+                else:
+                    # create a iteration message generator and
+                    # iteratively run the graph (the main engine loop)
+                    iteration_messages = self._generator(**vars(self))()
+                    ApplicationDriver.loop(
                     application=application,
                     iteration_messages=iteration_messages,
                     loop_status=loop_status)

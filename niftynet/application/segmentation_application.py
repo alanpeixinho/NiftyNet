@@ -67,7 +67,6 @@ class SegmentationApplication(BaseApplication):
             self, data_param=None, task_param=None, data_partitioner=None):
 
         print('initialise dataset loader')
-        import pdb; pdb.set_trace()
 
         self.data_param = data_param
         self.segmentation_param = task_param
@@ -283,7 +282,6 @@ class SegmentationApplication(BaseApplication):
         self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
     def initialise_network(self):
-        import pdb; pdb.set_trace()
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -312,8 +310,6 @@ class SegmentationApplication(BaseApplication):
                                  gradients_collector=None):
 
         print('connect data and network')
-        import pdb; pdb.set_trace()
-
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
@@ -445,11 +441,11 @@ class SegmentationApplication(BaseApplication):
             image = tf.cast(data_dict['image'], tf.float32)
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
+            
             net_out = self.net(image, **net_args)
             post_process_layer = PostProcessingLayer(
                 'SOFTMAX', num_classes=num_classes)
             net_out = post_process_layer(net_out)
-            import pdb; pdb.set_trace()
             self.initialise_aggregator()
 
 

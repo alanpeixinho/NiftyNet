@@ -39,6 +39,7 @@ class ImageWindow(object):
         :param dtypes: A nested structure of `tf.DType` objects
             corresponding to each image window
         """
+        print('Image window >>>>>>>>>>')
         self._shapes = shapes
         self._dtypes = dtypes
         self._placeholders_dict = None
@@ -289,6 +290,8 @@ class ImageWindow(object):
         """
         Update the placeholders according to the new n_samples (batch_size).
         Used in the queue-based tensorflow APIs.
+
+        import pdb; pdb.set_trace()
 
         :param n_samples:
         :return:

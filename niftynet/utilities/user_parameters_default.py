@@ -100,6 +100,13 @@ def add_inference_args(parser):
         default=())
 
     parser.add_argument(
+        "--frozen_model",
+        metavar='',
+        type=str,
+        help="Path to save the tensorflow frozen model",
+        default='')
+
+    parser.add_argument(
         "--inference_iter",
         metavar='',
         help="[Inference only] Use the checkpoint at this iteration for "

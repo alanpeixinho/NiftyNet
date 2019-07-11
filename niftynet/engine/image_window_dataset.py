@@ -60,6 +60,8 @@ class ImageWindowDataset(Layer):
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
+        print('image feeder')
+        
         self._num_threads = 1
         self._enqueuer = None
         self._seed = seed

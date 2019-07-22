@@ -292,6 +292,7 @@ class ApplicationDriver(object):
             finally:
                 tf.logging.info('cleaning up...')
                 # broadcasting session finished event
+                print(SESS_FINISHED)
                 iter_msg = IterationMessage()
                 iter_msg.current_iter = loop_status.get('current_iter', -1)
                 SESS_FINISHED.send(application, iter_msg=iter_msg)

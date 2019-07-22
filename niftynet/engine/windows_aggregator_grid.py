@@ -181,6 +181,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         and save the resulting output after reversing the initial preprocessing
         :return:
         '''
+
         if self.input_image is None:
             return
         for i in self.image_out:
@@ -198,8 +199,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         for i in self.image_out:
             print(np.sum(self.image_out[i]), " is sum of image out %s after"
                   % i)
+        print(self.image_out)
         for i in self.image_out:
-            filename = "{}_{}_{}.nii.gz".format(i, subject_name, self.postfix)
+            subject_name_no_ext = os.path.splitext(subject_name)[0]
+            if self.postfix:
+                filename = "{}_{}.nii".format(subject_name_no_ext, self.postfix)
+            else:
+                filename = subject_name_no_ext+'.nii'
+            print(i, subject_name, self.postfix)
             source_image_obj = self.input_image[self.name]
             misc_io.save_data_array(self.output_path,
                                     filename,

@@ -199,7 +199,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         for i in self.image_out:
             print(np.sum(self.image_out[i]), " is sum of image out %s after"
                   % i)
-        print(self.image_out)
+        #print(self.image_out)
         for i in self.image_out:
             subject_name_no_ext = os.path.splitext(subject_name)[0]
             if self.postfix:

@@ -449,11 +449,6 @@ class SegmentationApplication(BaseApplication):
             self.initialise_aggregator()
 
 
-
-
-
-
-
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(

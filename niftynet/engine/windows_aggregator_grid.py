@@ -68,6 +68,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         _, location = self.crop_batch(init_ones, location_init,
                                       self.window_border)
         for batch_id in range(n_samples):
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>')
+            print(location[batch_id])
             image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
                 location[batch_id, :]
             if image_id != self.image_id:
@@ -79,7 +81,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                     return False
                 self.image_out = {}
                 self.csv_out = {}
+                #print('++++++++++++++')
+                print(window)
                 for i in window:
+                    print('++++++++++++++++++++++++')
+                    print(i)
                     if 'window' in i: # check that we want to have an image
                         # and initialise accordingly
                         self.image_out[i] = self._initialise_empty_image(
@@ -110,6 +116,10 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 n_channel=window[i][0].shape[-1] + location_init
                                 [0, :].shape[-1])
             for i in window:
+                #print('---------------')
+                #print('i = ' + i)
+                #print(window[i].shape)
+                #print(window[i].max(), window[i].min(), window[i].mean(), window[i].std())
                 if 'window' in i:
                     self.image_out[i][
                         x_start:x_end, y_start:y_end, z_start:z_end, ...] = \

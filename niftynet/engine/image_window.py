@@ -39,7 +39,6 @@ class ImageWindow(object):
         :param dtypes: A nested structure of `tf.DType` objects
             corresponding to each image window
         """
-        print('Image window >>>>>>>>>>')
         self._shapes = shapes
         self._dtypes = dtypes
         self._placeholders_dict = None

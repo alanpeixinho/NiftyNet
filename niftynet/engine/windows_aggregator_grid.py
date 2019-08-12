@@ -203,7 +203,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         for i in self.image_out:
             subject_name_no_ext = os.path.splitext(subject_name)[0]
             if self.postfix:
-                filename = "{}_{}.nii".format(subject_name_no_ext, self.postfix)
+                filename = "{}.nii".format(subject_name_no_ext)
             else:
                 filename = subject_name_no_ext+'.nii'
             print(i, subject_name, self.postfix)

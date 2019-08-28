@@ -44,6 +44,14 @@ def add_application_args(parser):
         default='')
 
     parser.add_argument(
+        "--cuda_memory",
+        metavar='',
+        help="Set the ammount of GPU memory available per device, variable, e.g. '0.5'; (default = 1.0) "
+             "leave blank to use the system default value",
+        type=float,
+        default=1.0)
+
+    parser.add_argument(
         "--num_threads",
         help="Set number of preprocessing threads",
         metavar='',

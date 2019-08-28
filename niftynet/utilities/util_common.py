@@ -456,13 +456,17 @@ def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
     return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
 
 
-def tf_config():
+def tf_config(cuda_memory):
     """
     tensorflow system configurations
     """
+
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=cuda_memory)
+
     config = tf.ConfigProto()
     config.log_device_placement = False
     config.allow_soft_placement = True
+    config.gpu_options = gpu_options
     return config
 
 

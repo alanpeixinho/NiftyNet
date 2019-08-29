@@ -55,6 +55,7 @@ class ApplicationDriver(object):
         self.is_training_action = True
         self.num_threads = 0
         self.num_gpus = 0
+        self.cuda_memory = 1.0
         self.model_dir = None
 
         self.max_checkpoints = 2
@@ -104,6 +105,8 @@ class ApplicationDriver(object):
         self.num_gpus = system_param.num_gpus \
             if self.is_training_action else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
+
+        self.cuda_memory = system_param.cuda_memory
 
         # set training params.
         if self.is_training_action:
@@ -195,7 +198,7 @@ class ApplicationDriver(object):
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
-        with tf.Session(config=tf_config(system_param.cuda_memory), graph=graph):
+        with tf.Session(config=tf_config(self.cuda_memory), graph=graph):
             try:
 
 

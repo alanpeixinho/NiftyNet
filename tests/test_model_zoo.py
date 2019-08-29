@@ -21,7 +21,7 @@ def net_run_with_sys_argv(argv):
 
     SingletonApplication.clear()
     cache = sys.argv
-    argv.extend(['--cuda_devices', '0'])
+    argv.extend(['--cuda_devices', '0', '--cuda_memory', '0.3'])
     sys.argv = argv
     niftynet_main()
     sys.argv = cache

@@ -461,12 +461,12 @@ def tf_config(cuda_memory):
     tensorflow system configurations
     """
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=cuda_memory)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
 
-    config = tf.ConfigProto()
+    config = tf.ConfigProto(gpu_options=gpu_options)
     config.log_device_placement = False
     config.allow_soft_placement = True
-    config.gpu_options = gpu_options
+
     return config
 
 

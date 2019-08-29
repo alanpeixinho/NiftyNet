@@ -23,6 +23,7 @@ def net_run_with_sys_argv(argv):
     cache = sys.argv
     argv.extend(['--cuda_devices', '0', '--cuda_memory', '0.3'])
     sys.argv = argv
+    import pdb; pdb.set_trace()
     niftynet_main()
     sys.argv = cache
 
@@ -37,7 +38,7 @@ class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_train_infer(self):
         self._train()
@@ -64,7 +65,7 @@ class UltrasoundSimulatorGanModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -82,7 +83,7 @@ class Highres3dnetBrainParcellationModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -104,7 +105,7 @@ class AnisotropicNetsBratsChallengeModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.configA, 'inference'])
@@ -127,7 +128,7 @@ class MRCTRegressionModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
@@ -159,7 +160,7 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.id, download_if_already_existing=False, verbose=False)
 
     def test_train_infer(self):
         self._train()

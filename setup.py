@@ -70,7 +70,8 @@ setup(
         'pandas',
         'pillow',
         'blinker',
-        'packaging'
+        'packaging',
+        'deepsirius'
     ],
 
     entry_points={

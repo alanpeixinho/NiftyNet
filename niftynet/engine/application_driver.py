@@ -15,6 +15,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import deepdish
 import time
 
 import tensorflow as tf
@@ -270,6 +271,10 @@ class ApplicationDriver(object):
 
                         #os.makedirs(os.path.dirname(FROZEN_GDEF_PATH))
                         graph_io.write_graph(graphdef_frozen, './', application.action_param.frozen_model, as_text=False)
+                        deepdish.io.save(os.path.join(application.action_param.frozen_model, '.meta.h5'),
+                                         dict(input_node=input_name, output_node=output_name,
+                                              batch_size=application.net_param.batch_size,
+                                              patch_size=application.action_param.spatial_window_size))
                     return
                 else:
                     # create a iteration message generator and

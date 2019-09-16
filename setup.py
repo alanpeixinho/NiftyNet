@@ -71,7 +71,7 @@ setup(
         'pillow',
         'blinker',
         'packaging',
-        'deepsirius'
+        'deepdish'
     ],
 
     entry_points={

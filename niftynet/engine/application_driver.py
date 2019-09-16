@@ -269,9 +269,12 @@ class ApplicationDriver(object):
                         [output_name], # an array of output nodes
                         tf.float32.as_datatype_enum)
 
+                        print('Saving frozen graph model {} ...'.format(application.action_param.frozen_model))
                         #os.makedirs(os.path.dirname(FROZEN_GDEF_PATH))
                         graph_io.write_graph(graphdef_frozen, './', application.action_param.frozen_model, as_text=False)
-                        deepdish.io.save(os.path.join(application.action_param.frozen_model, '.meta.h5'),
+
+                        print('Saving frozen graph metadata {} ...'.format(application.action_param.frozen_model + '.meta.h5'))
+                        deepdish.io.save(application.action_param.frozen_model + '.meta.h5',
                                          dict(input_node=input_name, output_node=output_name,
                                               batch_size=application.net_param.batch_size,
                                               patch_size=application.action_param.spatial_window_size))

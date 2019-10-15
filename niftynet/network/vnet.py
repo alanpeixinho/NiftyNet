@@ -133,8 +133,8 @@ class VNetBlock(TrainableLayer):
                  n_output_chns,
                  w_initializer=None,
                  w_regularizer=None,
-                 b_initializer=None,
                  b_regularizer=None,
+                 b_initializer=None,
                  acti_func='relu',
                  name='vnet_block'):
 

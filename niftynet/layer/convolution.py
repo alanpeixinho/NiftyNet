@@ -38,7 +38,7 @@ class ConvLayer(TrainableLayer):
     """
 
     def __init__(self,
-                 n_output_chns,
+                 n_output_chns=1,
                  kernel_size=3,
                  stride=1,
                  dilation=1,
@@ -49,6 +49,7 @@ class ConvLayer(TrainableLayer):
                  b_initializer=None,
                  b_regularizer=None,
                  padding_constant=0,
+                 conv_type='REGULAR',
                  name='conv'):
         """
         :param padding_constant: a constant applied in padded convolution
@@ -64,6 +65,7 @@ class ConvLayer(TrainableLayer):
         self.dilation = dilation
         self.with_bias = with_bias
         self.padding_constant = padding_constant
+        self.conv_type = conv_type
 
         self.initializers = {
             'w': w_initializer if w_initializer else default_w_initializer(),
@@ -91,12 +93,27 @@ class ConvLayer(TrainableLayer):
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
         if self.padding in ('VALID', 'SAME'):
-            output_tensor = tf.nn.convolution(input=input_tensor,
-                                              filter=conv_kernel,
-                                              strides=full_stride,
-                                              dilation_rate=full_dilation,
-                                              padding=self.padding,
-                                              name='conv')
+
+            if self.conv_type == 'SEPARABLE_2D':
+                conv_output = tf.nn.separable_conv2d(input=input_tensor,
+                                                     filter=conv_kernel,
+                                                     strides=full_stride,
+                                                     padding='SAME',
+                                                     name='conv')
+            elif self.conv_type == 'DEPTHWISE_2D':
+                conv_output = tf.nn.depthwise_conv2d(input=input_tensor,
+                                                     filter=conv_kernel,
+                                                     strides=full_stride,
+                                                     padding='SAME',
+                                                     name='conv')
+            else:
+                conv_output = tf.nn.convolution(input=input_tensor,
+                                                filter=conv_kernel,
+                                                strides=full_stride,
+                                                dilation_rate=full_dilation,
+                                                padding='SAME',
+                                                name='conv')
+            output_tensor = conv_output
         else:
             output_tensor = _extended_convolution(
                 input_tensor,
@@ -104,7 +121,8 @@ class ConvLayer(TrainableLayer):
                 full_stride,
                 full_dilation,
                 self.padding,
-                constant=self.padding_constant)
+                constant=self.padding_constant,
+                conv_type=self.conv_type)
 
         if not self.with_bias:
             return output_tensor
@@ -132,7 +150,7 @@ class ConvolutionalLayer(TrainableLayer):
     """
 
     def __init__(self,
-                 n_output_chns,
+                 n_output_chns=1,
                  kernel_size=3,
                  stride=1,
                  dilation=1,
@@ -149,6 +167,7 @@ class ConvolutionalLayer(TrainableLayer):
                  moving_decay=0.9,
                  eps=1e-5,
                  padding_constant=0,
+                 conv_type='REGULAR',
                  name="conv"):
         """
         :param padding_constant: constant applied with CONSTANT padding
@@ -159,6 +178,8 @@ class ConvolutionalLayer(TrainableLayer):
         self.group_size = group_size
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
+        self.conv_type = conv_type
+
         if self.feature_normalization != 'group' and group_size > 0:
             raise ValueError('You cannot have a group_size > 0 if not using group norm')
         elif self.feature_normalization == 'group' and group_size <= 0:
@@ -272,6 +293,7 @@ def _extended_convolution(input_tensor,
                           dilations,
                           padding,
                           constant=0,
+                          conv_type='REGULAR',
                           name='extended_convolution'):
     """
     A simple wrapper for tf.nn.convolution that first expands the input tensor
@@ -342,12 +364,25 @@ def _extended_convolution(input_tensor,
                               mode=padding,
                               constant_values=constant)
 
-    conv_output = tf.nn.convolution(input=padded_input,
-                                    filter=kernel,
-                                    strides=strides,
-                                    dilation_rate=dilations,
-                                    padding='SAME',
-                                    name='conv_' + name)
+    if conv_type == 'SEPARABLE_2D':
+        conv_output = tf.nn.separable_conv2d(input=padded_input,
+                                             filter=kernel,
+                                             strides=strides,
+                                             padding='SAME',
+                                             name='conv_' + name)
+    elif conv_type == 'DEPTHWISE_2D':
+        conv_output = tf.nn.depthwise_conv2d(input=padded_input,
+                                             filter=kernel,
+                                             strides=strides,
+                                             padding='SAME',
+                                             name='conv_' + name)
+    else:
+        conv_output = tf.nn.convolution(input=padded_input,
+                                        filter=kernel,
+                                        strides=strides,
+                                        dilation_rate=dilations,
+                                        padding='SAME',
+                                        name='conv_' + name)
 
     conv_output_shape = conv_output.shape.as_list()
     out_pad = [0]

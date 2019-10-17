@@ -78,7 +78,7 @@ class FastSCNN2D(BaseNet):
                     w_initializer=self.w_initializer,
                     w_regularizer=self.w_regularizer)
 
-        upsample1 = tf.keras.layers.UpSampling2D((4, 4))
+        upsample1 = tf.keras.layers.UpSampling2D((4, 4), interpolation='bilinear')
         dwconv = ConvolutionalLayer(1, conv_type='DEPTHWISE_2D', kernel_size=3,
                                     stride=1,
                                     padding='same',
@@ -137,10 +137,10 @@ class FastSCNN2D(BaseNet):
             regularizer=self.w_regularizer,
             name='dropout_')
         # tf.keras.layers.Dropout(0.3)
-        upsample = tf.keras.layers.UpSampling2D((8, 8))
+        upsample = tf.keras.layers.UpSampling2D((8, 8), interpolation='bilinear')
 
         flow = conv(flow, is_training=is_training)
-        flow = dropout(flow, keep_prob=keep_prob)
+        flow = dropout(flow, keep_prob=keep_prob, is_training=is_training)
         flow = upsample(flow)
 
         flow = tf.nn.softmax(flow)

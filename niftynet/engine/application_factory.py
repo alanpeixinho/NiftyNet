@@ -101,6 +101,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
     "VolEnforcement":
         'niftynet.layer.loss_segmentation.volume_enforcement',
+    "Hausdorff":
+        'niftynet.layer.loss_segmentation.weighted_hausdorff',
     # "L1Loss":
     #     'niftynet.layer.loss_segmentation.l1_loss',
     # "L2Loss":

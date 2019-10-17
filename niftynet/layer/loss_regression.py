@@ -106,7 +106,6 @@ class LossFunction(Layer):
                 data_loss.append(tf.reduce_mean(loss_batch))
             return tf.reduce_mean(data_loss)
 
-
 def l1_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.

@@ -49,6 +49,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.toynet.ToyNet',
     "unet":
         'niftynet.network.unet.UNet3D',
+    "nonewnet":
+        'niftynet.network.no_new_net.UNet3D',
     "vnet":
         'niftynet.network.vnet.VNet',
     "dense_vnet":
@@ -102,7 +104,7 @@ SUPPORTED_LOSS_SEGMENTATION = {
     "VolEnforcement":
         'niftynet.layer.loss_segmentation.volume_enforcement',
     "Hausdorff":
-        'niftynet.layer.loss_segmentation.weighted_hausdorff',
+        'niftynet.layer.loss_segmentation.weighted_hausdorff_loss',
     # "L1Loss":
     #     'niftynet.layer.loss_segmentation.l1_loss',
     # "L2Loss":

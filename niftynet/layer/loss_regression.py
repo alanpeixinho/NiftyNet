@@ -9,6 +9,10 @@ import tensorflow as tf
 from niftynet.engine.application_factory import LossRegressionFactory
 from niftynet.layer.base_layer import Layer
 
+from itertools import product
+
+import sklearn
+
 
 class LossFunction(Layer):
     def __init__(self,
@@ -24,7 +28,6 @@ class LossFunction(Layer):
             loss_func_params if loss_func_params is not None else {}
         self._reshape = True
         if loss_type == 'Cosine':
-            print(loss_type)
             self._reshape = False
 
     def layer_op(self,
@@ -52,7 +55,6 @@ class LossFunction(Layer):
             batch_size = ground_truth.shape[0].value
             dir_size = 1
             if self._reshape:
-                print("resize is true")
                 ground_truth = tf.reshape(ground_truth, [batch_size, -1])
                 if weight_map is not None:
                     weight_map = tf.reshape(weight_map, [batch_size, -1])
@@ -112,6 +114,7 @@ def l1_loss(prediction, ground_truth, weight_map=None):
     :param ground_truth: the measurement you are approximating with regression.
     :return: mean of the l1 loss across all voxels.
     """
+
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
     if weight_map is not None:
         absolute_residuals = tf.multiply(absolute_residuals, weight_map)

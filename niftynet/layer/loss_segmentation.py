@@ -4,10 +4,12 @@ Loss functions for multi-class segmentation
 """
 from __future__ import absolute_import, print_function, division
 
-import math
 import numpy as np
 import tensorflow as tf
 
+from itertools import product
+
+from tensorflow import math
 from niftynet.engine.application_factory import LossSegmentationFactory
 from niftynet.layer.base_layer import Layer
 
@@ -36,6 +38,10 @@ class LossFunction(Layer):
         self._data_loss_func = LossSegmentationFactory.create(loss_type)
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else dict()
+
+        self._reshape = True
+        if loss_type == 'Hausdorff':
+            self._reshape = False
 
         data_loss_function_name = self._data_loss_func.__name__
         if data_loss_function_name.startswith('cross_entropy') \
@@ -106,14 +112,17 @@ class LossFunction(Layer):
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
-                    ground_truth_b = tf.reshape(ground_truth_b, ref_shape)
-                    if ground_truth_b.shape.as_list()[-1] == 1:
-                        ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
+                    import pdb; pdb.set_trace()
 
-                    if weight_b is not None:
-                        weight_b = tf.reshape(weight_b, ref_shape)
-                        if weight_b.shape.as_list()[-1] == 1:
-                            weight_b = tf.squeeze(weight_b, axis=-1)
+                    if self._reshape:
+                        ground_truth_b = tf.reshape(ground_truth_b, ref_shape)
+                        if ground_truth_b.shape.as_list()[-1] == 1:
+                            ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
+
+                        if weight_b is not None:
+                            weight_b = tf.reshape(weight_b, ref_shape)
+                            if weight_b.shape.as_list()[-1] == 1:
+                                weight_b = tf.squeeze(weight_b, axis=-1)
 
                     # preparing loss function parameters
                     loss_params = {
@@ -341,7 +350,7 @@ def generalised_dice_loss(prediction,
                                       generalised_dice_score)
     return 1 - generalised_dice_score
 
-def _tf_repeat(tensor, repeats):
+def tf_repeat(tensor, repeats):
     """
     Args:
     input: A Tensor. 1-D or higher.
@@ -357,46 +366,66 @@ def _tf_repeat(tensor, repeats):
         repeated_tesnor = tf.reshape(tiled_tensor, tf.shape(tensor) * repeats)
     return repeated_tesnor
 
+def weighted_hausdorff_loss(prediction, ground_truth, weight_map = None):
+    # https://arxiv.org/pdf/1806.07564.pdf
 
-import numpy as np
-import tensorflow as tf
-from sklearn.utils.extmath import cartesian
-
-resized_height = 144
-resized_width  = 256
-max_dist = math.sqrt(resized_height**2 + resized_width**2)
-n_pixels = resized_height * resized_width
-all_img_locations = tf.convert_to_tensor(cartesian([np.arange(resized_height), np.arange(resized_width)]),
-                                                   tf.float32)
-
-def weighted_hausdorff(prediction, ground_truth, weight_map=None):
     y_true = ground_truth
     y_pred = prediction
 
-    # https://arxiv.org/pdf/1806.07564.pdf
-    #prob_map_b - y_pred
-    #gt_b - y_true
+    shape = (y_true).get_shape().as_list()
+
+    num_classes = prediction.get_shape().as_list()[-1]
+
+    resized_height = shape[0]
+    resized_width  = shape[1]
+
+    print((resized_height, resized_width))
+
+    print(shape)
+    max_dist = np.sqrt(resized_height**2 + resized_width**2)
+    n_pixels = resized_height * resized_width
+
+    cartesian_product = np.array(list(product(np.arange(resized_height),
+                                                 np.arange(resized_width))),
+                                                 dtype=np.float32)
+
+    all_img_locations = tf.convert_to_tensor(cartesian_product,
+                                                       tf.float32)
+
+    import pdb; pdb.set_trace()
+
+
+#     y_true = tf.reshape(y_true, (n_pixels,))
+#     y_pred = tf.reshape(y_pred, (n_pixels,num_classes))
+
+    y_pred = tf.reshape(y_pred, (resized_height, resized_width, num_classes))
+    y_true = tf.reshape(y_true, (resized_height, resized_width))
 
     terms_1 = []
     terms_2 = []
-    y_true = tf.squeeze(y_true, axis=-1)
-    y_pred = tf.squeeze(y_pred, axis=-1)
-#     y_true = tf.reduce_mean(y_true, axis=-1)
-#     y_pred = tf.reduce_mean(y_pred, axis=-1)
-    for b in range(batch_size):
-        gt_b = y_true[b]
-        prob_map_b = y_pred[b]
+
+    #     y_true = tf.squeeze(y_true, axis=-1)
+    #     y_pred = tf.squeeze(y_pred, axis=-1)
+    #     y_true = tf.reduce_mean(y_true, axis=-1)
+    #     y_pred = tf.reduce_mean(y_pred, axis=-1)
+
+    for c in range(num_classes):
+        tf_c = tf.constant(c, dtype=tf.float32)
+        gt_b = tf.math.equal(y_true, c)
+        prob_map_b = y_pred[..., c]
         # Pairwise distances between all possible locations and the GTed locations
-        n_gt_pts = tf.reduce_sum(gt_b)
-        gt_b = tf.where(tf.cast(gt_b, tf.bool))
+
+        gt_b = tf.where(gt_b)
         gt_b = tf.cast(gt_b, tf.float32)
+
+        n_gt_pts = tf.reduce_sum(gt_b)
         d_matrix = tf.sqrt(tf.maximum(tf.reshape(tf.reduce_sum(gt_b*gt_b, axis=1), (-1, 1)) + tf.reduce_sum(all_img_locations*all_img_locations, axis=1)-2*(tf.matmul(gt_b, tf.transpose(all_img_locations))), 0.0))
         d_matrix = tf.transpose(d_matrix)
         # Reshape probability map as a long column vector,
         # and prepare it for multiplication
         p = tf.reshape(prob_map_b, (n_pixels, 1))
         n_est_pts = tf.reduce_sum(p)
-        p_replicated = _tf_repeat(tf.reshape(p, (-1, 1)), [1, n_gt_pts])
+        p_replicated = tf_repeat(tf.reshape(p, (-1, 1)), [1, n_gt_pts])
         eps = 1e-6
         alpha = 4
         # Weighted Hausdorff Distance
@@ -406,6 +435,7 @@ def weighted_hausdorff(prediction, ground_truth, weight_map=None):
         term_2 = tf.reduce_mean(d_div_p, axis=0)
         terms_1.append(term_1)
         terms_2.append(term_2)
+
     terms_1 = tf.stack(terms_1)
     terms_2 = tf.stack(terms_2)
     terms_1 = tf.Print(tf.reduce_mean(terms_1), [tf.reduce_mean(terms_1)], "term 1")

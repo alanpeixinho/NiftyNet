@@ -140,7 +140,7 @@ class FastSCNN2D(BaseNet):
         upsample = tf.keras.layers.UpSampling2D((8, 8), interpolation='bilinear')
 
         flow = conv(flow, is_training=is_training)
-        flow = dropout(flow, keep_prob=keep_prob, is_training=is_training)
+        flow = dropout(flow, keep_prob=keep_prob)
         flow = upsample(flow)
 
         flow = tf.nn.softmax(flow)

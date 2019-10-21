@@ -11,8 +11,6 @@ from niftynet.layer.base_layer import Layer
 
 from itertools import product
 
-import sklearn
-
 
 class LossFunction(Layer):
     def __init__(self,

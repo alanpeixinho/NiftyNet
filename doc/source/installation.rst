@@ -3,8 +3,7 @@ Installation
 
 1. Installing the appropriate `TensorFlow`_ package:
 
-    - ``pip install "tensorflow-gpu>=1.13.2, <=1.14"`` for TensorFlow with GPU support
-    - ``pip install "tensorflow>=1.13.2, <=1.14"`` for CPU-only TensorFlow
+    - ``pip install "tensorflow==1.15.*"``
 
 2. Installing NiftyNet package
 
@@ -22,11 +21,9 @@ Installation
 
         # installing dependencies from the list of requirements
         cd NiftyNet/
-        pip install -r requirements-gpu.txt
+        pip install -r requirements.txt
 
     Alternatively, you can `download the code`_ as a .zip file and extract it.
-    Change ``requirements-gpu.txt`` to ``requirements-cpu.txt`` for a CPU only
-    version.
 
 3. (Optional) Accessing MetaImage format (``.mha/.mhd`` files) requires SimpleITK:
 

@@ -490,7 +490,9 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     dice_numerator = tf.Print(
         dice_denominator, [dice_numerator, dice_denominator, loss_dice])
 
-    return loss_dice + loss_xent
+    #Peixinho: in the original paper, dice is negative (the bigger the better), allowing the loss to be up to -1
+    #maximum dice and minimum cross entropy, I added a constant sum, to set the minimum to 0.
+    return 1.0 + loss_dice + loss_xent
 
 
 def sensitivity_specificity_loss(prediction,

@@ -12,7 +12,6 @@ from niftynet.layer.elementwise import ElementwiseLayer as ElementWise
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
 from niftynet.network.base_net import BaseNet
 
-
 class UNet2D(BaseNet):
     """
     ### Description
@@ -37,7 +36,6 @@ class UNet2D(BaseNet):
                             [dBLOCK]  - - - [uBLOCK]
                                 |               |
                                 ----[BLOCk] ----
-
     ### Constraints
     """
 

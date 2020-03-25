@@ -112,7 +112,7 @@ class LossFunction(Layer):
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
-                    import pdb; pdb.set_trace()
+                    #import pdb; pdb.set_trace()
 
                     if self._reshape:
                         ground_truth_b = tf.reshape(ground_truth_b, ref_shape)

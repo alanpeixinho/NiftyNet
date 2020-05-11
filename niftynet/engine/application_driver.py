@@ -10,13 +10,12 @@ Example usage::
 ``system_param`` and ``input_data_param`` should be generated using:
 ``niftynet.utilities.user_parameters_parser.run()``
 """
-import sys
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import deepdish
 import time
 

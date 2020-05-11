@@ -339,7 +339,7 @@ class ApplicationDriver(object):
         outputs_collector = OutputsCollector(n_devices=max(num_gpus, 1))
         gradients_collector = GradientsCollector(n_devices=max(num_gpus, 1))
         # start constructing the graph, handling training and inference cases
-        with graph.as_defzault(), tf.device(main_device):
+        with graph.as_default(), tf.device(main_device):
             # initialise sampler
             with tf.name_scope('Sampler'):
                 application.initialise_sampler()

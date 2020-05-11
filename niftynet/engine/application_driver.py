@@ -443,9 +443,19 @@ class ApplicationDriver(object):
         sess = tf.get_default_session()
         assert sess, 'method should be called within a TF session context.'
 
-        iteration_message.current_iter_output = sess.run(
-            iteration_message.ops_to_run,
-            feed_dict=iteration_message.data_feed_dict)
+        try:
+            iteration_message.current_iter_output = sess.run(
+                iteration_message.ops_to_run,
+                feed_dict=iteration_message.data_feed_dict)
+        except tf.errors.ResourceExhaustedError as e:
+            import sys
+            import traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(
+                exc_type, exc_value, exc_traceback, file=sys.stdout)
+
+            tf.logging.error('This model could not be allocated on GPU. ')
+
 
         # broadcasting event of finishing an iteration
         ITER_FINISHED.send(application, iter_msg=iteration_message)

@@ -196,7 +196,7 @@ class ApplicationDriver(object):
                 num_threads=self.num_threads,
                 is_training_action=self.is_training_action)
 
-        final_user_message = None
+        abort = False
 
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
@@ -304,10 +304,9 @@ class ApplicationDriver(object):
 #                 traceback.print_exception(
 #                     exc_type, exc_value, exc_traceback, file=sys.stdout)
                 tf.logging.error('This model could not be allocated on this device.')
-                final_user_message = 'Failure cause = GPU OUT OF MEMORY\n.Not enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
+                final_user_message = 'Failure cause = GPU OUT OF MEMORY.\nNot enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
                 tf.logging.error(final_user_message)
-                import sys
-                sys.exit(1)
+                abort = True
             except RuntimeError:
                 import sys
                 import traceback
@@ -315,12 +314,13 @@ class ApplicationDriver(object):
                 traceback.print_exception(
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
-                tf.logging.info('cleaning up...')
-                # broadcasting session finished event
-                print(SESS_FINISHED)
-                iter_msg = IterationMessage()
-                iter_msg.current_iter = loop_status.get('current_iter', -1)
-                SESS_FINISHED.send(application, iter_msg=iter_msg)
+                if not abort:
+                    tf.logging.info('cleaning up...')
+                    # broadcasting session finished event
+                    print(SESS_FINISHED)
+                    iter_msg = IterationMessage()
+                    iter_msg.current_iter = loop_status.get('current_iter', -1)
+                    SESS_FINISHED.send(application, iter_msg=iter_msg)
 
         application.stop()
         if not loop_status.get('normal_exit', False):

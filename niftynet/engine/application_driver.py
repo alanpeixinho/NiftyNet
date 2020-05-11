@@ -196,6 +196,8 @@ class ApplicationDriver(object):
                 num_threads=self.num_threads,
                 is_training_action=self.is_training_action)
 
+        final_user_message = None
+
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
@@ -296,12 +298,13 @@ class ApplicationDriver(object):
                     loop_status['normal_exit'] = True
 
             except tf.errors.ResourceExhaustedError as e:
-                import sys
-                import traceback
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback.print_exception(
-                    exc_type, exc_value, exc_traceback, file=sys.stdout)
-                tf.logging.error('This model could not be allocated on these devices. Try reducing batch/input size to reduce memory footprint.')
+#                 import sys
+#                 import traceback
+#                 exc_type, exc_value, exc_traceback = sys.exc_info()
+#                 traceback.print_exception(
+#                     exc_type, exc_value, exc_traceback, file=sys.stdout)
+                tf.logging.error('This model could not be allocated on this device.')
+                final_user_message = 'Failure cause = GPU OUT OF MEMORY\n.Not enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
             except RuntimeError:
                 import sys
                 import traceback
@@ -323,6 +326,8 @@ class ApplicationDriver(object):
         tf.logging.info(
             "%s stopped (time in second %.2f).",
             type(application).__name__, (time.time() - start_time))
+        if final_user_message:
+            tf.logging.info(final_user_message)
 
     # pylint: disable=not-context-manager
     @staticmethod

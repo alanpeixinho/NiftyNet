@@ -197,6 +197,7 @@ class ApplicationDriver(object):
                 is_training_action=self.is_training_action)
 
         abort = False
+        final_user_message = None
 
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
@@ -304,8 +305,7 @@ class ApplicationDriver(object):
 #                 traceback.print_exception(
 #                     exc_type, exc_value, exc_traceback, file=sys.stdout)
                 tf.logging.error('This model could not be allocated on this device.')
-                final_user_message = 'Failure cause = GPU OUT OF MEMORY.\nNot enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
-                tf.logging.error(final_user_message)
+                final_user_message = ['Failure cause = GPU OUT OF MEMORY.', 'Not enough memory to build your model.', 'Try reducing batch/input size to reduce memory footprint.']
                 abort = True
             except RuntimeError:
                 import sys
@@ -329,6 +329,10 @@ class ApplicationDriver(object):
         tf.logging.info(
             "%s stopped (time in second %.2f).",
             type(application).__name__, (time.time() - start_time))
+
+        if final_user_message:
+            for message in final_user_message:
+                tf.logging.error(message)
 
     # pylint: disable=not-context-manager
     @staticmethod

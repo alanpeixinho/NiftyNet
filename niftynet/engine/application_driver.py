@@ -447,6 +447,9 @@ class ApplicationDriver(object):
             iteration_message.current_iter_output = sess.run(
                 iteration_message.ops_to_run,
                 feed_dict=iteration_message.data_feed_dict)
+
+            # broadcasting event of finishing an iteration
+            ITER_FINISHED.send(application, iter_msg=iteration_message)
         except tf.errors.ResourceExhaustedError as e:
             import sys
             import traceback
@@ -454,8 +457,5 @@ class ApplicationDriver(object):
             traceback.print_exception(
                 exc_type, exc_value, exc_traceback, file=sys.stdout)
 
-            tf.logging.error('This model could not be allocated on GPU. ')
+            tf.logging.error('This model could not be allocated on these devices. Try reducing batch/input size to reduce memory footprint.')
 
-
-        # broadcasting event of finishing an iteration
-        ITER_FINISHED.send(application, iter_msg=iteration_message)

@@ -15,7 +15,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import deepdish
 import time
 
@@ -307,6 +306,7 @@ class ApplicationDriver(object):
                 tf.logging.error('This model could not be allocated on this device.')
                 final_user_message = 'Failure cause = GPU OUT OF MEMORY\n.Not enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
                 tf.logging.error(final_user_message)
+                import sys
                 sys.exit(1)
             except RuntimeError:
                 import sys

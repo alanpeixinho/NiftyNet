@@ -294,6 +294,14 @@ class ApplicationDriver(object):
                 if not loop_status.get('normal_exit', False):
                     # reached the end of inference Dataset
                     loop_status['normal_exit'] = True
+
+            except tf.errors.ResourceExhaustedError as e:
+                import sys
+                import traceback
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(
+                    exc_type, exc_value, exc_traceback, file=sys.stdout)
+                tf.logging.error('This model could not be allocated on these devices. Try reducing batch/input size to reduce memory footprint.')
             except RuntimeError:
                 import sys
                 import traceback
@@ -331,7 +339,7 @@ class ApplicationDriver(object):
         outputs_collector = OutputsCollector(n_devices=max(num_gpus, 1))
         gradients_collector = GradientsCollector(n_devices=max(num_gpus, 1))
         # start constructing the graph, handling training and inference cases
-        with graph.as_default(), tf.device(main_device):
+        with graph.as_defzault(), tf.device(main_device):
             # initialise sampler
             with tf.name_scope('Sampler'):
                 application.initialise_sampler()
@@ -443,19 +451,9 @@ class ApplicationDriver(object):
         sess = tf.get_default_session()
         assert sess, 'method should be called within a TF session context.'
 
-        try:
-            iteration_message.current_iter_output = sess.run(
-                iteration_message.ops_to_run,
-                feed_dict=iteration_message.data_feed_dict)
+        iteration_message.current_iter_output = sess.run(
+            iteration_message.ops_to_run,
+            feed_dict=iteration_message.data_feed_dict)
 
-            # broadcasting event of finishing an iteration
-            ITER_FINISHED.send(application, iter_msg=iteration_message)
-        except tf.errors.ResourceExhaustedError as e:
-            import sys
-            import traceback
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(
-                exc_type, exc_value, exc_traceback, file=sys.stdout)
-
-            tf.logging.error('This model could not be allocated on these devices. Try reducing batch/input size to reduce memory footprint.')
-
+        # broadcasting event of finishing an iteration
+        ITER_FINISHED.send(application, iter_msg=iteration_message)

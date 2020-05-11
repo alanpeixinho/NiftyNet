@@ -10,6 +10,8 @@ Example usage::
 ``system_param`` and ``input_data_param`` should be generated using:
 ``niftynet.utilities.user_parameters_parser.run()``
 """
+import sys
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -305,6 +307,8 @@ class ApplicationDriver(object):
 #                     exc_type, exc_value, exc_traceback, file=sys.stdout)
                 tf.logging.error('This model could not be allocated on this device.')
                 final_user_message = 'Failure cause = GPU OUT OF MEMORY\n.Not enough memory to build your model.\nTry reducing batch/input size to reduce memory footprint.'
+                tf.logging.error(final_user_message)
+                sys.exit(1)
             except RuntimeError:
                 import sys
                 import traceback
@@ -326,8 +330,6 @@ class ApplicationDriver(object):
         tf.logging.info(
             "%s stopped (time in second %.2f).",
             type(application).__name__, (time.time() - start_time))
-        if final_user_message:
-            tf.logging.info(final_user_message)
 
     # pylint: disable=not-context-manager
     @staticmethod

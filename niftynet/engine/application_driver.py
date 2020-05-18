@@ -214,8 +214,8 @@ class ApplicationDriver(object):
                 #sess = tf.get_default_session()
 
         
-                # init = tf.global_variables_initializer()
-                # sess.run(init)
+                init = tf.global_variables_initializer()
+                sess.run(init)
 
                 import re
                 # Determine which vars to

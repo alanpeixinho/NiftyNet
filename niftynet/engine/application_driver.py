@@ -202,7 +202,7 @@ class ApplicationDriver(object):
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
-        with tf.Session(config=tf_config(self.cuda_memory), graph=graph):
+        with tf.Session(config=tf_config(self.cuda_memory), graph=graph) as sess:
             try:
 
 

@@ -72,6 +72,8 @@ class ModelRestorer(object):
         checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
         to_restore = None  # tf.train.Saver's default value, restoring all
 
+#         import pdb; pdb.set_trace()
+
         if self.vars_to_restore:
             # partially restore (updating `to_restore` list)
             tf.logging.info("Finding variables to restore...")
@@ -100,6 +102,8 @@ class ModelRestorer(object):
                 len(tf.global_variables()),
                 checkpoint, ',\n'.join(var_names))
             # Initialize vars to randomize
+
+#             import pdb; pdb.set_trace()
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
 

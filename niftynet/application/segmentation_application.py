@@ -435,18 +435,52 @@ class SegmentationApplication(BaseApplication):
                 var=self.total_loss, name='total_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
-            outputs_collector.add_to_collection(
-                var=data_loss, name='loss',
-                average_over_devices=False, collection=CONSOLE)
-            outputs_collector.add_to_collection(
-                var=data_loss, name='loss',
-                average_over_devices=True, summary_type='scalar',
-                collection=TF_SUMMARIES)
+#             outputs_collector.add_to_collection(
+#                 var=data_loss, name='loss',
+#                 average_over_devices=False, collection=CONSOLE)
+#             outputs_collector.add_to_collection(
+#                 var=data_loss, name='loss',
+#                 average_over_devices=True, summary_type='scalar',
+#                 collection=TF_SUMMARIES)
 
-            # outputs_collector.add_to_collection(
-            #    var=image*180.0, name='image',
-            #    average_over_devices=False, summary_type='image3_sagittal',
-            #    collection=TF_SUMMARIES)
+            #import pdb; pdb.set_trace()
+
+            print('Lets go carai ...')
+            print(image.shape, image.dtype)
+
+#             net_out = tf.Print(net_out, [net_out], message='Net output: ')
+
+            immin, immax = tf.reduce_min(image), tf.reduce_max(image)
+            log_image = ((image - immin)/immax)*255
+
+            print(net_out.shape, net_out.dtype)
+
+            immin, immax = tf.reduce_min(net_out[...,:1]), tf.reduce_max(net_out[...,:1])
+            log_out = ((net_out[...,:1] - immin)/immax)*255
+
+#             log_out = tf.Print(log_out, [log_out], message='Logger output: ')
+
+
+            ground_truth = data_dict.get('label', None)
+            immin, immax = tf.reduce_min(ground_truth), tf.reduce_max(ground_truth)
+            log_gt = ((ground_truth - immin)/immax)*255
+
+            log_out = tf.Print(ground_truth, [ground_truth], message='gt output: ')
+
+            outputs_collector.add_to_collection(
+               var=log_image, name='image',
+               average_over_devices=False, summary_type='image3_sagittal',
+               collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+               var=log_out*255, name='segmentation',
+               average_over_devices=False, summary_type='image3_sagittal',
+               collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+               var=log_gt*255, name='ground_truth',
+               average_over_devices=False, summary_type='image3_sagittal',
+               collection=TF_SUMMARIES)
+
 
             # outputs_collector.add_to_collection(
             #    var=image, name='image',

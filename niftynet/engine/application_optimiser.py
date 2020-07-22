@@ -14,6 +14,7 @@ specify `--optimiser newclass.NewOptimisor`
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
+from tensorflow.train.experimental import enable_mixed_precision_graph_rewrite
 
 
 # pylint: disable=too-few-public-methods
@@ -28,12 +29,14 @@ class Adam(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.AdamOptimizer(
+        opt = tf.train.AdamOptimizer(
             learning_rate=learning_rate,
             beta1=0.9,
             beta2=0.999,
             epsilon=1e-08,
             use_locking=False, name='Adam')
+
+        return enable_mixed_precision_graph_rewrite(opt)
 
 
 class Adagrad(object):
@@ -46,10 +49,13 @@ class Adagrad(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.AdagradOptimizer(
+        opt = tf.train.AdagradOptimizer(
             learning_rate=learning_rate,
             initial_accumulator_value=0.1,
             use_locking=False, name='Adagrad')
+
+        return enable_mixed_precision_graph_rewrite(opt)
+
 
 
 class Momentum(object):
@@ -62,12 +68,14 @@ class Momentum(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.MomentumOptimizer(
+        opt = tf.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
             use_locking=False,
             name='Momentum',
             use_nesterov=False)
+
+        return enable_mixed_precision_graph_rewrite(opt)
 
 
 class NesterovMomentum(object):
@@ -80,12 +88,15 @@ class NesterovMomentum(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.MomentumOptimizer(
+        opt = tf.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
             use_locking=False,
             name='Momentum',
             use_nesterov=True)
+
+        return enable_mixed_precision_graph_rewrite(opt)
+
 
 
 class RMSProp(object):
@@ -98,7 +109,7 @@ class RMSProp(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.RMSPropOptimizer(
+        opt = tf.train.RMSPropOptimizer(
             learning_rate=learning_rate,
             decay=0.9,
             momentum=0.0,
@@ -106,6 +117,9 @@ class RMSProp(object):
             use_locking=False,
             centered=False,
             name='RMSProp')
+
+        return enable_mixed_precision_graph_rewrite(opt)
+
 
 
 class GradientDescent(object):
@@ -118,7 +132,10 @@ class GradientDescent(object):
         """
         create an instance of the optimiser
         """
-        return tf.train.GradientDescentOptimizer(
+        opt = tf.train.GradientDescentOptimizer(
             learning_rate=learning_rate,
             use_locking=False,
             name='GradientDescent')
+
+        return enable_mixed_precision_graph_rewrite(opt)
+

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
+import numpy
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
@@ -13,6 +14,7 @@ from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.sampler_balanced_v2 import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
+from niftynet.utilities.util_common import color_labels, generate_color_palette
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -35,7 +37,6 @@ from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 SUPPORTED_INPUT = set(
     ['image', 'label', 'weight', 'sampler', 'inferred', 'value'])
 
-
 class SegmentationApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "SEGMENTATION"
 
@@ -46,6 +47,8 @@ class SegmentationApplication(BaseApplication):
 
         self.net_param = net_param
         self.action_param = action_param
+
+        self.__im_summary_type_dict = {'xy': 'image3_axial', 'xz': 'image3_coronal', 'yz': 'image3_sagittal'}
 
         self.data_param = None
         self.segmentation_param = None
@@ -445,41 +448,15 @@ class SegmentationApplication(BaseApplication):
 
             #import pdb; pdb.set_trace()
 
-            print('Lets go carai ...')
-            print(image.shape, image.dtype)
+            if image.shape[3]>1:#is 3d image
+                axes = ['xy', 'yz', 'xz']
+            else:
+                axes = ['xy']
+            for axis in axes:
+                self.tensorboard_preview_collectors(outputs_collector, image, data_dict.get('label', None), net_out, axis)
 
 #             net_out = tf.Print(net_out, [net_out], message='Net output: ')
 
-            immin, immax = tf.reduce_min(image), tf.reduce_max(image)
-            log_image = ((image - immin)/immax)*255
-
-            print(net_out.shape, net_out.dtype)
-
-            immin, immax = tf.reduce_min(net_out[...,:1]), tf.reduce_max(net_out[...,:1])
-            log_out = ((net_out[...,:1] - immin)/immax)*255
-
-#             log_out = tf.Print(log_out, [log_out], message='Logger output: ')
-
-
-            ground_truth = data_dict.get('label', None)
-            immin, immax = tf.reduce_min(ground_truth), tf.reduce_max(ground_truth)
-            log_gt = ((ground_truth - immin)/immax)*255
-
-            log_out = tf.Print(ground_truth, [ground_truth], message='gt output: ')
-
-            outputs_collector.add_to_collection(
-               var=log_image, name='image',
-               average_over_devices=False, summary_type='image3_sagittal',
-               collection=TF_SUMMARIES)
-            outputs_collector.add_to_collection(
-               var=log_out*255, name='segmentation',
-               average_over_devices=False, summary_type='image3_sagittal',
-               collection=TF_SUMMARIES)
-
-            outputs_collector.add_to_collection(
-               var=log_gt*255, name='ground_truth',
-               average_over_devices=False, summary_type='image3_sagittal',
-               collection=TF_SUMMARIES)
 
 
             # outputs_collector.add_to_collection(
@@ -551,3 +528,123 @@ class SegmentationApplication(BaseApplication):
 
     def add_inferred_output(self, data_param, task_param):
         return self.add_inferred_output_like(data_param, task_param, 'label')
+
+    def tensorboard_image_normalize(self, x):
+        immin, immax = tf.reduce_min(x), tf.reduce_max(x)
+        log = ((x - immin) / immax) * 255
+        return log
+
+    def tensorboard_add_class(self, outputs_collector, ground_truth, output, c, slice_idx, middle_slice_idx, axis = 'xy'):
+        log_out = self.tensorboard_image_normalize(output[..., c:c+1])
+        log_gt = tf.cast(tf.math.equal(ground_truth , c), dtype='float32') * 255
+
+        is_3d = len(output.shape) >= 5  # is 3d
+        if is_3d:
+            im_summary_type = self.__im_summary_type_dict[axis]
+        else:
+            im_summary_type = 'image'
+
+        # print('output: ', output.shape)
+        # print('gt: ', ground_truth.shape)
+        #
+        # print('log output: ', log_out.shape)
+        # print('log gt: ', log_gt.shape)
+
+        outputs_collector.add_to_collection(
+            var=log_out, name='class_{}/full/segmentation/{}'.format(c, axis),
+            average_over_devices=False, summary_type=im_summary_type,
+            collection=TF_SUMMARIES)
+
+        outputs_collector.add_to_collection(
+            var=log_gt, name='class_{}/full/ground_truth/{}'.format(c, axis),
+            average_over_devices=False, summary_type=im_summary_type,
+            collection=TF_SUMMARIES)
+
+
+        if is_3d:
+            print('add slice {} ...'.format(middle_slice_idx))
+
+            outputs_collector.add_to_collection(
+                var=log_out[slice_idx],
+                name='class_{}/slice{}/segmentation/{}'.format(c, middle_slice_idx, axis),
+                average_over_devices=False, summary_type='image',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=log_gt[slice_idx],
+                name='class{}/slice{}/ground_truth/{}'.format(c, middle_slice_idx, axis),
+                average_over_devices=False, summary_type='image',
+                collection=TF_SUMMARIES)
+
+
+    def tensorboard_preview_collectors(self, outputs_collector, image, ground_truth, output, axis = 'xy'):
+
+        print('img: ', image.shape)
+        print('gt: ', ground_truth.shape)
+        print('out: ', output.shape)
+
+        nclasses = self.segmentation_param.num_classes
+
+        log_image = self.tensorboard_image_normalize(image)
+        palette = generate_color_palette(nclasses)
+        log_out = color_labels(tf.argmax(output, axis=-1), palette)
+        log_gt = color_labels(tf.cast(ground_truth[...,0], dtype='int32'), palette)
+
+        log_gt = tf.Print(log_gt,
+                          [tf.reduce_min(log_gt), tf.reduce_max(log_gt), tf.shape(log_gt)[3:],
+                           tf.reduce_min(log_out), tf.reduce_max(log_out), tf.shape(log_out)[3:]],
+                          message='Logger min/max/shape Output min/max/shape: ')
+
+        is_3d = len(output.shape) >= 5  # is 3d
+        if is_3d:
+            im_summary_type = self.__im_summary_type_dict[axis]
+        else:
+            im_summary_type = 'image'
+
+        print("Number of classes: ", nclasses)
+
+        outputs_collector.add_to_collection(
+            var=log_image, name='full/image/{}'.format(axis),
+            average_over_devices=False, summary_type=im_summary_type,
+            collection=TF_SUMMARIES)
+
+        # outputs_collector.add_to_collection(
+        #     var=log_gt, name='class_all/full/ground_truth',
+        #     average_over_devices=False, summary_type='image3_axial',
+        #     collection=TF_SUMMARIES)
+        #
+        # outputs_collector.add_to_collection(
+        #     var=log_out, name='class_all/full/segmentation',
+        #     average_over_devices=False, summary_type='image3_axial',
+        #     collection=TF_SUMMARIES)
+
+        middle_slice_idx = slice_idx = None
+        if is_3d:
+            if axis == 'xy':
+                middle_slice_idx = image.shape[3] // 2
+                slice_idx = numpy.index_exp[:, :, :, middle_slice_idx, ...]
+            elif axis == 'yz':
+                middle_slice_idx = image.shape[1] // 2
+                slice_idx = numpy.index_exp[:, middle_slice_idx, ...]
+            else:#xz
+                middle_slice_idx = image.shape[2] // 2
+                slice_idx = numpy.index_exp[:, :, middle_slice_idx, ...]
+
+            outputs_collector.add_to_collection(
+                var=log_image[slice_idx], summary_type='image',
+                average_over_devices=False, name='slice{}/image/{}'.format(middle_slice_idx, axis),
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=log_gt[slice_idx], summary_type='image',
+                average_over_devices=False, name='class_all/slice{}/ground_truth/{}'.format(middle_slice_idx, axis),
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=log_out[slice_idx], summary_type='image',
+                average_over_devices=False, name='class_all/slice{}/segmentation/{}'.format(middle_slice_idx, axis),
+                collection=TF_SUMMARIES)
+
+        for c in range(nclasses):
+            print("Log variables for class {}".format(c))
+            self.tensorboard_add_class(outputs_collector, ground_truth, output, c, slice_idx, middle_slice_idx, axis)

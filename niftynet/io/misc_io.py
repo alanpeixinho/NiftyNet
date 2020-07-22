@@ -711,8 +711,11 @@ def _image3_animated_gif(tag, ims):
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
+    # print('gif animation ...')
+    # print(ims.shape)
     ims = [
-        np.asarray((ims[i, :, :]).astype(np.uint8))
+        # np.asarray((ims[i, :, :]).astype(np.uint8))
+        np.asarray((ims[i, ...]).astype(np.uint8))
         for i in range(ims.shape[0])
     ]
     ims = [GIF.fromarray(im) for im in ims]
@@ -731,7 +734,6 @@ def _image3_animated_gif(tag, ims):
         height=10, width=10, colorspace=1, encoded_image_string=img_str)
     image_summary = summary_pb2.Summary.Value(tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
-
 
 def image3(name,
            tensor,
@@ -784,8 +786,9 @@ def image3(name,
     with tf.device('/cpu:0'):
         for it_i in range(min(max_out, transposed_tensor.shape.as_list()[0])):
             inp = [
-                name + suffix.format(it_i), transposed_tensor[it_i, :, :, :]
+                name + suffix.format(it_i), transposed_tensor[it_i, ...]
             ]
+            #print('inp: ', inp)
             summary_op = tf.py_func(_image3_animated_gif, inp, tf.string)
             for c in collections:
                 tf.add_to_collection(c, summary_op)

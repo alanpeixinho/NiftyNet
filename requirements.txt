@@ -9,3 +9,4 @@ pillow
 blinker
 packaging
 deepdish
+scikit-image

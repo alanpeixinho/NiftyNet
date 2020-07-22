@@ -12,7 +12,8 @@ import numpy as np
 import tensorflow as tf
 from scipy import ndimage
 from six import string_types
-
+from skimage import color
+import random
 
 def traverse_nested(input_lists, types=(list, tuple)):
     """
@@ -321,6 +322,16 @@ def damerau_levenshtein_distance(s1, s2):
     return d[string_1_length - 1, string_2_length - 1]
 
 
+def generate_color_palette(n):
+    idx = np.arange(n)
+    #shuffle with fixed key, to reuse same color palette
+    random.shuffle(idx, lambda: 0.5)
+    h_step = 1.0 / n
+    palette = np.array([ (h_step*i, 0.5, 0.5) for i in idx ])
+    palette = (color.hsv2rgb(palette) * 255).astype(np.uint8)
+    return tf.constant(palette)
+
+
 def otsu_threshold(img, nbins=256):
     """
     Implementation of otsu thresholding
@@ -431,6 +442,16 @@ class ParserNamespace(object):
     def update(self, **kwargs):
         self.__dict__.update(kwargs)
 
+def color_labels(x, palette):
+    """
+    Assume labels are [0,n)
+    :param x: nd array
+    :return: colored ndarray with extra dimension size 3 (rgb)
+    """
+
+    #palette = generate_color_palette(n)
+    #tf_palette = tf.constant(palette)
+    return tf.nn.embedding_lookup(palette, x)
 
 def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
     """

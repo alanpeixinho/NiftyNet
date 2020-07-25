@@ -90,6 +90,7 @@ class OutputsCollector(object):
 
         return: key of the var_dict
         """
+        print('add_to_dict ', var_dict, var, name, do_averaging)
         assert isinstance(var, tf.Tensor), \
             "only supports adding one tf.Tensor at a time," \
             "but received {}".format(var)
@@ -98,7 +99,7 @@ class OutputsCollector(object):
             "select a meaningful name for variable {}" \
             "received {}".format(var, name)
 
-        if do_averaging and self.n_devices > 1:
+        if do_averaging:
             # collecting variables across devices as a list
             var_list = var_dict.get(name, [])
             try:
@@ -107,6 +108,7 @@ class OutputsCollector(object):
                 tf.logging.fatal(
                     "averaged variable name %s has been taken", name)
                 raise
+            print('new_name_avg', name)
             var_dict[name] = var_list
             if len(var_list) > self.n_devices:
                 tf.logging.fatal("averaged variable %s has been used "
@@ -120,6 +122,7 @@ class OutputsCollector(object):
         while new_name in var_dict:
             _uniq_id += 1
             new_name = '{}_{}'.format(name, _uniq_id)
+        print('new_name', new_name)
         var_dict[new_name] = var
         return new_name
 
@@ -145,6 +148,9 @@ class OutputsCollector(object):
             see SUPPORTED_SUMMARY
         :return:
         """
+
+        print('add_to_collection', var, name, average_over_devices, summary_type)
+
         if collection == CONSOLE:
             self._add_to_console(var, name, average_over_devices)
         elif collection == NETWORK_OUTPUT:
@@ -212,7 +218,8 @@ class OutputsCollector(object):
         if isinstance(values, tf.Tensor):
             summary_op = util.look_up_operations(summary_type,
                                                  SUPPORTED_SUMMARY)
-            summary_op(name, values, collections=[TF_SUMMARIES])
+            with tf.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
+                summary_op(name, values, collections=[TF_SUMMARIES])
 
     @staticmethod
     def _average_variables_over_devices(var_dict, create_tf_summary_op=False):
@@ -227,9 +234,10 @@ class OutputsCollector(object):
             var_dict[var_name] = tf.reduce_mean(values, name=var_name)
             if create_tf_summary_op:
                 # for the averaged variables use scalar summary only
-                tf.summary.scalar(name='{}_device_average_'.format(var_name),
-                                  tensor=var_dict[var_name],
-                                  collections=[TF_SUMMARIES])
+                with tf.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
+                    tf.summary.scalar(name='{}'.format(var_name),
+                                      tensor=var_dict[var_name],
+                                      collections=[TF_SUMMARIES])
 
 
 # pylint: disable=too-many-locals,cell-var-from-loop

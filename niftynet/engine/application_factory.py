@@ -65,6 +65,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.unet_2d.UNet2D',
     "fast_scnn":
         'niftynet.network.fast_scnn_2d.FastSCNN2D',
+    "stitchernet":
+        'niftynet.network.stitchernet.StitcherNet',
 
     # classification
     "resnet": 'niftynet.network.resnet.ResNet',

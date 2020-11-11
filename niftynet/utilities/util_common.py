@@ -484,9 +484,13 @@ def tf_config(cuda_memory):
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
 
+    print(gpu_options)
+
     config = tf.ConfigProto(gpu_options=gpu_options)
     config.log_device_placement = False
     config.allow_soft_placement = True
+
+    print(config)
 
     return config
 

@@ -143,7 +143,7 @@ class FastSCNN2D(BaseNet):
         flow = dropout(flow, keep_prob=keep_prob)
         flow = upsample(flow)
 
-        flow = tf.nn.softmax(flow)
+        #flow = tf.nn.softmax(flow)
 
         
 

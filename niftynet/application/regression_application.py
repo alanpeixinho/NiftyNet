@@ -221,7 +221,7 @@ class RegressionApplication(BaseApplication):
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix)
-        
+
     def initialise_identity_aggregator(self):
         self.output_decoder = WindowAsImageAggregator(
                 image_reader=self.readers[0],
@@ -288,6 +288,9 @@ class RegressionApplication(BaseApplication):
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
+            gt = data_dict['output']
+            #net_out = tf.Print(net_out, [tf.math.reduce_mean(net_out), tf.math.reduce_std(net_out), tf.math.reduce_mean(gt), tf.math.reduce_std(gt)], 'Net Output: ')
+
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -350,13 +353,13 @@ class RegressionApplication(BaseApplication):
                 var=self.total_loss, name='total_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
-            outputs_collector.add_to_collection(
-                var=data_loss, name='loss',
-                average_over_devices=False, collection=CONSOLE)
-            outputs_collector.add_to_collection(
-                var=data_loss, name='loss',
-                average_over_devices=True, summary_type='scalar',
-                collection=TF_SUMMARIES)
+            # outputs_collector.add_to_collection(
+            #     var=data_loss, name='loss',
+            #     average_over_devices=False, collection=CONSOLE)
+            # outputs_collector.add_to_collection(
+            #     var=data_loss, name='loss',
+            #     average_over_devices=True, summary_type='scalar',
+            #     collection=TF_SUMMARIES)
 
 
         elif self.is_inference:
@@ -366,6 +369,8 @@ class RegressionApplication(BaseApplication):
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
             net_out = PostProcessingLayer('IDENTITY')(net_out)
+
+            #net_out = tf.Print(net_out, [tf.math.reduce_mean(net_out), tf.math.reduce_std(net_out)], 'Net Output: ')
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',
@@ -389,3 +394,56 @@ class RegressionApplication(BaseApplication):
 
     def add_inferred_output(self, data_param, task_param):
         return self.add_inferred_output_like(data_param, task_param, 'output')
+
+    def tensorboard_image_normalize(self, x):
+        immin, immax = tf.reduce_min(x), tf.reduce_max(x)
+        log = ((x - immin) / immax) * 255
+        return log
+
+    def tensorboard_preview_add(self, outputs_collector, output, image, slice_idx, middle_slice_idx, axis = 'xy'):
+        log_out = self.tensorboard_image_normalize(output)
+        log_image = self.tensorboard_image_normalize(image)
+
+        is_3d = len(output.shape) >= 5  # is 3d
+
+        if is_3d:
+            print('add slice {} ...'.format(middle_slice_idx))
+
+            outputs_collector.add_to_collection(
+                var=log_out[slice_idx],
+                name='{}/slice/output'.format(axis),
+                average_over_devices=False, summary_type='image',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=log_image[slice_idx], summary_type='image',
+                average_over_devices=False, name='{}/slice/input'.format(axis),
+                collection=TF_SUMMARIES)
+        else:
+            outputs_collector.add_to_collection(
+                var=log_out[:1,...], name='{}/input'.format(axis),
+                average_over_devices=False, summary_type='image',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=log_image[:1, ...], summary_type='image',
+                average_over_devices=False, name='{}/output'.format(c, axis),
+                collection=TF_SUMMARIES)
+
+    def tensorboard_preview_collectors(self, outputs_collector, image, output, axis = 'xy'):
+
+        is_3d = len(output.shape) >= 5  # is 3d
+
+        middle_slice_idx = slice_idx = None
+        if is_3d:
+            if axis == 'xy':
+                middle_slice_idx = image.shape[3] // 2
+                slice_idx = numpy.index_exp[:1, :, :, middle_slice_idx, ...]#show only middle slice of first image on batch
+            elif axis == 'yz':
+                middle_slice_idx = image.shape[1] // 2
+                slice_idx = numpy.index_exp[:1, middle_slice_idx, ...]
+            else:#xz
+                middle_slice_idx = image.shape[2] // 2
+                slice_idx = numpy.index_exp[:1, :, middle_slice_idx, ...]
+
+        self.tensorboard_preview_add(outputs_collector, output, image, slice_idx, middle_slice_idx, axis)

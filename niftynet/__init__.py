@@ -12,6 +12,8 @@ from __future__ import unicode_literals
 # Before doing anything else, check TF is installed
 # and fail gracefully if not.
 try:
+    import os
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
     import tensorflow as tf
 except ImportError:
     raise ImportError('NiftyNet is based on TensorFlow, which'

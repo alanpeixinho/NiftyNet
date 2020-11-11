@@ -39,7 +39,6 @@ from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
 from niftynet.utilities.util_common import traverse_nested
 
-
 # pylint: disable=too-many-instance-attributes
 class ApplicationDriver(object):
     """
@@ -202,9 +201,10 @@ class ApplicationDriver(object):
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
+        print('Creating session ...')
+
         with tf.Session(config=tf_config(self.cuda_memory), graph=graph) as sess:
             try:
-
 
                 #import pdb; pdb.set_trace()
 

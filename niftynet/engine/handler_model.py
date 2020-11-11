@@ -26,6 +26,12 @@ def make_model_name(model_dir):
     _model_dir = touch_folder(os.path.join(model_dir, 'models'))
     return os.path.join(_model_dir, FILE_PREFIX)
 
+def blacklist_restore(name):
+    if name.startswith('ApplyGradients'):
+        return True
+    if 'Adam' in name:
+        return True
+    return False
 
 class ModelRestorer(object):
     """
@@ -101,14 +107,23 @@ class ModelRestorer(object):
                 len(to_restore),
                 len(tf.global_variables()),
                 checkpoint, ',\n'.join(var_names))
-            # Initialize vars to randomize
+        else:
+            to_restore = tf.global_variables()
+            to_randomise = []
 
-#             import pdb; pdb.set_trace()
+        print('restore: ', to_restore)
+        blacklist = [restorable for restorable in to_restore if blacklist_restore(restorable.name)]
+
+        to_restore = [restorable for restorable in to_restore if restorable not in blacklist]
+        to_randomise.extend([restorable for restorable in to_restore if restorable in blacklist])
+
+        # Initialize vars to randomize
+        if len(to_randomise)>0:
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
 
-
         try:
+            print('handler model: ', to_restore, to_randomise)
             saver = tf.train.Saver(
                 var_list=to_restore, save_relative_paths=True)
             saver.restore(tf.get_default_session(), checkpoint)

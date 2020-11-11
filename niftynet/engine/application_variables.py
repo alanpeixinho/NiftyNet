@@ -24,7 +24,6 @@ SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
                      'image3_coronal': image3_coronal,
                      'image3_axial': image3_axial}
 
-
 class GradientsCollector(object):
     """
     This collector has a list of all gradients, collected when

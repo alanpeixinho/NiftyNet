@@ -576,6 +576,7 @@ class SegmentationApplication(BaseApplication):
                 average_over_devices=False, name='class_{}/{}/input'.format(c, axis),
                 collection=TF_SUMMARIES)
 
+
     def tensorboard_preview_collectors(self, outputs_collector, image, ground_truth, output, axis = 'xy'):
 
         nclasses = self.segmentation_param.num_classes

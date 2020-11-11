@@ -4,7 +4,7 @@ import unittest
 
 import os
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.holistic_net import HolisticNet
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -17,13 +17,13 @@ class HolisticNetTest(NiftyNetTestCase):
 
         holistic_net_instance = HolisticNet(
             num_classes=3,
-            w_regularizer=regularizers.l2_regularizer(0.5),
-            b_regularizer=regularizers.l2_regularizer(0.5))
+            w_regularizer=regularizers.L2(0.5),
+            b_regularizer=regularizers.L2(0.5))
         out = holistic_net_instance(x, is_training=False)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 20, 20, 20, 3), out.shape)
 
@@ -33,13 +33,13 @@ class HolisticNetTest(NiftyNetTestCase):
 
         holistic_net_instance = HolisticNet(
             num_classes=3,
-            w_regularizer=regularizers.l2_regularizer(0.5),
-            b_regularizer=regularizers.l2_regularizer(0.5))
+            w_regularizer=regularizers.L2(0.5),
+            b_regularizer=regularizers.L2(0.5))
         out = holistic_net_instance(x, is_training=False)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 20, 20, 3), out.shape)
 

@@ -4,7 +4,7 @@ import unittest
 
 import os
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.dense_vnet import DenseVNet
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -21,7 +21,7 @@ class DenseVNetTest(NiftyNetTestCase):
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 72, 2), out.shape)
 
@@ -35,7 +35,7 @@ class DenseVNetTest(NiftyNetTestCase):
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 2), out.shape)
 

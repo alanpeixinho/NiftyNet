@@ -4,7 +4,7 @@ import os
 import unittest
 
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.unet_2d import UNet2D
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -22,7 +22,7 @@ class UNet3DTest(NiftyNetTestCase):
         print(unet_instance.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)
             self.assertAllClose((2, 4, 4, 2), out.shape)
@@ -33,12 +33,12 @@ class UNet3DTest(NiftyNetTestCase):
         x = tf.ones(input_shape)
 
         unet_instance = UNet2D(num_classes=2,
-                               w_regularizer=regularizers.l2_regularizer(0.4))
+                               w_regularizer=regularizers.L2(0.4))
         out = unet_instance(x, is_training=True)
         print(unet_instance.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)
             self.assertAllClose((2, 4, 4, 2), out.shape)

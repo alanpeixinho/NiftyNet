@@ -257,7 +257,7 @@ def read_mapping_file(mapping_file):
                 map_name, map_value = line[0], np.float32(line[1:])
                 mapping_dict[map_name] = tuple(map_value)
             except ValueError:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     "unknown input format: {}".format(mapping_file))
                 raise
     return mapping_dict
@@ -273,9 +273,9 @@ def write_all_mod_mapping(hist_model_file, mapping):
         try:
             copyfile(hist_model_file, backup_name)
         except OSError:
-            tf.logging.warning('cannot backup file {}'.format(hist_model_file))
+            tf.compat.v1.logging.warning('cannot backup file {}'.format(hist_model_file))
             raise
-        tf.logging.warning(
+        tf.compat.v1.logging.warning(
             "moved existing histogram reference file\n"
             " from {} to {}".format(hist_model_file, backup_name))
 

@@ -23,11 +23,11 @@ class Invertible(with_metaclass(ABCMeta, object)):
 class Layer(object):
     def __init__(self, name='untitled_op'):
         self.name = name
-        self._op = tf.make_template(name, self.layer_op, create_scope_now_=True)
+        self._op = tf.compat.v1.make_template(name, self.layer_op, create_scope_now_=True)
 
     def layer_op(self, *args, **kwargs):
         msg = 'method \'layer_op\' in \'{}\''.format(type(self).__name__)
-        tf.logging.fatal(msg)
+        tf.compat.v1.logging.fatal(msg)
         raise NotImplementedError
 
     def __call__(self, *args, **kwargs):
@@ -61,21 +61,21 @@ class TrainableLayer(Layer):
         self._regularizers = None
 
     def trainable_variables(self):
-        return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+        return tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
                                  self.layer_scope().name)
 
     def restore_from_checkpoint(self, checkpoint_name, scope=None):
         if scope is None:
             scope = self.layer_scope().name
-        tf.add_to_collection(RESTORABLE, (self.layer_scope().name,
+        tf.compat.v1.add_to_collection(RESTORABLE, (self.layer_scope().name,
                                           checkpoint_name, scope))
 
     def regularizer_loss(self):
-        return tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+        return tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES,
                                  self.layer_scope().name)
 
     def num_trainable_params(self):
-        n = tf.Dimension(0)
+        n = tf.compat.v1.Dimension(0)
         for x in self.trainable_variables():
             n += np.prod(x.get_shape())
         return int(n)
@@ -154,7 +154,7 @@ class LayerFromCallable(Layer):
     def __init__(self, layer_op, name='from_callable_op'):
         super(LayerFromCallable, self).__init__(name=name)
         if not callable(layer_op):
-            tf.logging.fatal("layer_op must be callable.")
+            tf.compat.v1.logging.fatal("layer_op must be callable.")
             raise TypeError
         self._layer_op = layer_op
 

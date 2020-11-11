@@ -140,7 +140,7 @@ class ScaleBlock(TrainableLayer):
         output_tensor = input_tensor
         for layer in range(self.n_layers):
             # modalities => feature channels
-            output_tensor = tf.transpose(output_tensor, perm=perm)
+            output_tensor = tf.transpose(a=output_tensor, perm=perm)
             output_tensor = tf.unstack(output_tensor, axis=-1)
             for (idx, tensor) in enumerate(output_tensor):
                 block_name = 'M_F_{}_{}'.format(layer, idx)
@@ -157,7 +157,7 @@ class ScaleBlock(TrainableLayer):
             output_tensor = tf.stack(output_tensor, axis=-1)
 
             # feature channels => modalities
-            output_tensor = tf.transpose(output_tensor, perm=perm)
+            output_tensor = tf.transpose(a=output_tensor, perm=perm)
             output_tensor = tf.unstack(output_tensor, axis=-1)
             for (idx, tensor) in enumerate(output_tensor):
                 block_name = 'F_M_{}_{}'.format(layer, idx)
@@ -174,7 +174,7 @@ class ScaleBlock(TrainableLayer):
             output_tensor = tf.stack(output_tensor, axis=-1)
 
         if self.func == 'MAX':
-            output_tensor = tf.reduce_max(output_tensor, axis=-1)
+            output_tensor = tf.reduce_max(input_tensor=output_tensor, axis=-1)
         elif self.func == 'AVERAGE':
-            output_tensor = tf.reduce_mean(output_tensor, axis=-1)
+            output_tensor = tf.reduce_mean(input_tensor=output_tensor, axis=-1)
         return output_tensor

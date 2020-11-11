@@ -77,7 +77,7 @@ class ClassSegFinnet(BaseNet):
         #     name=params['name'])
         # flow_pool = pool_layer(flow)
         flow_pool = flow
-        flow_pool = tf.reshape(flow_pool, [tf.shape(images)[0], 1, 1, 1,
+        flow_pool = tf.reshape(flow_pool, [tf.shape(input=images)[0], 1, 1, 1,
                                            self.layers[1][
             'n_features']])
         print("check flow pooling", flow_pool.shape)

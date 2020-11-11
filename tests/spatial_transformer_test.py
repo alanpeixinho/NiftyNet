@@ -22,7 +22,7 @@ class ResamplerTest(NiftyNetTestCase):
                                    boundary=boundary)
         out = resampler(input, grid)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out_value = sess.run(out)
             self.assertAllClose(expected_value, out_value)
 

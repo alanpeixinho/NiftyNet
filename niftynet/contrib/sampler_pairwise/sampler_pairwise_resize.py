@@ -40,7 +40,7 @@ class PairwiseResizeSampler(Layer):
             self.reader_0.tf_dtypes,
             data_param)
         if self.window.has_dynamic_shapes:
-            tf.logging.fatal('Dynamic shapes not supported.\nPlease specify '
+            tf.compat.v1.logging.fatal('Dynamic shapes not supported.\nPlease specify '
                              'all spatial dims of the input data, for the '
                              'spatial_window_size parameter.')
             raise NotImplementedError
@@ -62,13 +62,13 @@ class PairwiseResizeSampler(Layer):
         # mapping random integer id to 4 volumes moving/fixed x image/label
         # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
-            lambda image_id: tuple(tf.py_func(
+            lambda image_id: tuple(tf.compat.v1.py_func(
                 self.get_pairwise_inputs, [image_id],
                 [tf.int32, tf.float32, tf.float32, tf.int32, tf.int32])),
             num_parallel_calls=4)  # supported by tf 1.4?
         # todo: sequential and no repeatition
         image_dataset = image_dataset.batch(self.batch_size)
-        self.iterator = image_dataset.make_initializable_iterator()
+        self.iterator = tf.compat.v1.data.make_initializable_iterator(image_dataset)
 
     def get_pairwise_inputs(self, image_id):
         # fetch fixed image
@@ -111,7 +111,7 @@ class PairwiseResizeSampler(Layer):
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
         image_id.set_shape((self.batch_size,))
-        image_id = tf.to_float(image_id)
+        image_id = tf.cast(image_id, dtype=tf.float32)
 
         fixed_inputs.set_shape(
             (self.batch_size,) + (None,) * self.spatial_rank + (2,))
@@ -139,7 +139,7 @@ class PairwiseResizeSampler(Layer):
 
             # scale the image to new space
             batch_scale = [
-                tf.reshape(tf.to_float(img) / tf.to_float(win), (1,1))
+                tf.reshape(tf.cast(img, dtype=tf.float32) / tf.cast(win, dtype=tf.float32), (1,1))
                 for (win, img) in zip(win_spatial_shape, img_spatial_shape)]
             batch_scale = tf.concat(batch_scale, axis=1)
             affine_constraints = ((None, 0.0, 0.0, 0.0),
@@ -164,8 +164,8 @@ class PairwiseResizeSampler(Layer):
             start_location = tf.zeros((self.batch_size, self.spatial_rank))
             end_location = tf.constant(self.window_size[:self.spatial_rank])
             end_location = tf.reshape(end_location, (1, self.spatial_rank))
-            end_location = tf.to_float(tf.tile(
-                end_location, [self.batch_size, 1]))
+            end_location = tf.cast(tf.tile(
+                end_location, [self.batch_size, 1]), dtype=tf.float32)
             locations = tf.concat([
                 image_id, start_location, end_location], axis=1)
         return windows, locations

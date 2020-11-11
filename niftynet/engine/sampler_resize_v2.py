@@ -30,7 +30,7 @@ class ResizeSampler(ImageWindowDataset):
                  queue_length=10,
                  smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
-        tf.logging.info('reading size of preprocessed images')
+        tf.compat.v1.logging.info('reading size of preprocessed images')
         ImageWindowDataset.__init__(
             self,
             reader=reader,
@@ -48,7 +48,7 @@ class ResizeSampler(ImageWindowDataset):
             # this is useful when do inference with a spatial window
             # which is different from the training specifications
             self.window.set_spatial_shape(spatial_window_size)
-        tf.logging.info("initialised resize sampler %s ", self.window.shapes)
+        tf.compat.v1.logging.info("initialised resize sampler %s ", self.window.shapes)
 
     def layer_op(self, idx=None):
         """

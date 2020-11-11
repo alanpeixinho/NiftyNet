@@ -52,7 +52,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
             _output_mask = tf.ones([self.n_output_chns]) > 0
         else:
             n_sparse_output_chns = tf.reduce_sum(
-                tf.cast(output_mask, tf.float32))
+                input_tensor=tf.cast(output_mask, tf.float32))
             _output_mask = output_mask
 
         n_full_input_chns = _input_mask.shape.as_list()[0]
@@ -64,7 +64,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
             self.n_output_chns, n_full_input_chns)).flatten()
         full_stride = np.vstack((
             1, [self.stride] * spatial_rank, 1)).flatten()
-        deconv_kernel = tf.get_variable(
+        deconv_kernel = tf.compat.v1.get_variable(
             'w', shape=w_full_size.tolist(),
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -100,11 +100,11 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
 
         # adding the bias term
         bias_full_size = (self.n_output_chns,)
-        bias_term = tf.get_variable(
+        bias_term = tf.compat.v1.get_variable(
             'b', shape=bias_full_size,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
-        sparse_bias = tf.boolean_mask(bias_term, _output_mask)
+        sparse_bias = tf.boolean_mask(tensor=bias_term, mask=_output_mask)
 
         output_tensor = tf.nn.bias_add(
             output_tensor, sparse_bias, name='add_bias')
@@ -155,7 +155,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
         full_dilation = layer_util.expand_spatial_params(
             self.dilation, spatial_rank)
 
-        conv_kernel = tf.get_variable(
+        conv_kernel = tf.compat.v1.get_variable(
             'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -167,16 +167,16 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
         else:
             raise NotImplementedError("spatial rank not supported")
 
-        sparse_kernel = tf.transpose(conv_kernel, transpositions[0])
-        sparse_kernel = tf.boolean_mask(sparse_kernel, _output_mask)
-        sparse_kernel = tf.transpose(sparse_kernel, transpositions[1])
-        sparse_kernel = tf.boolean_mask(sparse_kernel, _input_mask)
-        sparse_kernel = tf.transpose(sparse_kernel, transpositions[2])
+        sparse_kernel = tf.transpose(a=conv_kernel, perm=transpositions[0])
+        sparse_kernel = tf.boolean_mask(tensor=sparse_kernel, mask=_output_mask)
+        sparse_kernel = tf.transpose(a=sparse_kernel, perm=transpositions[1])
+        sparse_kernel = tf.boolean_mask(tensor=sparse_kernel, mask=_input_mask)
+        sparse_kernel = tf.transpose(a=sparse_kernel, perm=transpositions[2])
 
         output_tensor = tf.nn.convolution(input=input_tensor,
-                                          filter=sparse_kernel,
+                                          filters=sparse_kernel,
                                           strides=full_stride,
-                                          dilation_rate=full_dilation,
+                                          dilations=full_dilation,
                                           padding=self.padding,
                                           name='conv')
         if output_mask is None:
@@ -190,11 +190,11 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
             return output_tensor
 
         # adding the bias term
-        bias_term = tf.get_variable(
+        bias_term = tf.compat.v1.get_variable(
             'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
-        sparse_bias = tf.boolean_mask(bias_term, output_mask)
+        sparse_bias = tf.boolean_mask(tensor=bias_term, mask=output_mask)
         output_tensor = tf.nn.bias_add(
             output_tensor, sparse_bias, name='add_bias')
         return output_tensor
@@ -241,52 +241,52 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
                 params_shape[0], self.n_dense_channels)
         axes = list(range(input_shape.ndims - 1))
         # create trainable variables and moving average variables
-        beta = tf.get_variable(
+        beta = tf.compat.v1.get_variable(
             'beta',
             shape=params_shape,
             initializer=self.initializers['beta'],
             regularizer=self.regularizers['beta'],
             dtype=tf.float32, trainable=True)
-        gamma = tf.get_variable(
+        gamma = tf.compat.v1.get_variable(
             'gamma',
             shape=params_shape,
             initializer=self.initializers['gamma'],
             regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
-        beta = tf.boolean_mask(beta, mask)
-        gamma = tf.boolean_mask(gamma, mask)
+        beta = tf.boolean_mask(tensor=beta, mask=mask)
+        gamma = tf.boolean_mask(tensor=gamma, mask=mask)
 
-        collections = [tf.GraphKeys.GLOBAL_VARIABLES]
-        moving_mean = tf.get_variable(
+        collections = [tf.compat.v1.GraphKeys.GLOBAL_VARIABLES]
+        moving_mean = tf.compat.v1.get_variable(
             'moving_mean',
             shape=params_shape,
             initializer=self.initializers['moving_mean'],
             dtype=tf.float32, trainable=False, collections=collections)
-        moving_variance = tf.get_variable(
+        moving_variance = tf.compat.v1.get_variable(
             'moving_variance',
             shape=params_shape,
             initializer=self.initializers['moving_variance'],
             dtype=tf.float32, trainable=False, collections=collections)
 
         # mean and var
-        mean, variance = tf.nn.moments(inputs, axes)
+        mean, variance = tf.nn.moments(x=inputs, axes=axes)
         # only update masked moving averages
         mean_update = tf.dynamic_stitch(
-            [tf.to_int32(tf.where(mask)[:, 0]),
-             tf.to_int32(tf.where(~mask)[:, 0])],
+            [tf.cast(tf.compat.v1.where(mask)[:, 0], dtype=tf.int32),
+             tf.cast(tf.compat.v1.where(~mask)[:, 0], dtype=tf.int32)],
             [mean,
-             tf.boolean_mask(moving_mean, ~mask)])
+             tf.boolean_mask(tensor=moving_mean, mask=~mask)])
         variance_update = tf.dynamic_stitch(
-            [tf.to_int32(tf.where(mask)[:, 0]),
-             tf.to_int32(tf.where(~mask)[:, 0])],
+            [tf.cast(tf.compat.v1.where(mask)[:, 0], dtype=tf.int32),
+             tf.cast(tf.compat.v1.where(~mask)[:, 0], dtype=tf.int32)],
             [variance,
-             tf.boolean_mask(moving_variance, ~mask)])
+             tf.boolean_mask(tensor=moving_variance, mask=~mask)])
         update_moving_mean = moving_averages.assign_moving_average(
             moving_mean, mean_update, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance_update, self.moving_decay).op
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_mean)
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_variance)
+        tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, update_moving_mean)
+        tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:
@@ -296,8 +296,8 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
         else:
             outputs = tf.nn.batch_normalization(
                 inputs,
-                tf.boolean_mask(moving_mean, mask),
-                tf.boolean_mask(moving_variance, mask),
+                tf.boolean_mask(tensor=moving_mean, mask=mask),
+                tf.boolean_mask(tensor=moving_variance, mask=mask),
                 beta, gamma, self.eps, name='batch_norm')
         outputs.set_shape(inputs.get_shape())
         return outputs
@@ -384,7 +384,7 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
             name='conv_')
         if keep_prob is not None:
             output_mask = \
-                tf.to_float(tf.random_shuffle(tf.range(self.n_output_chns))) \
+                tf.cast(tf.random.shuffle(tf.range(self.n_output_chns)), dtype=tf.float32) \
                 < keep_prob * self.n_output_chns
             n_output_ch = math.ceil(keep_prob * self.n_output_chns)
         else:

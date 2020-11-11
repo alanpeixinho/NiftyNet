@@ -32,7 +32,7 @@ class PadLayer(Layer, Invertible):
         try:
             spatial_border = tuple(map(lambda x: (x,), border))
         except (ValueError, TypeError):
-            tf.logging.fatal("Unknown padding param. {}".format(border))
+            tf.compat.v1.logging.fatal("Unknown padding param. {}".format(border))
             raise
         self.border = spatial_border
         self.image_name = set(image_name)
@@ -49,7 +49,7 @@ class PadLayer(Layer, Invertible):
         for name, image in input_image.items():
             self._set_full_border(image)
             if name not in self.image_name:
-                tf.logging.warning('could not pad, dict name %s not in %s', name, self.image_name)
+                tf.compat.v1.logging.warning('could not pad, dict name %s not in %s', name, self.image_name)
                 continue
             input_image[name] = np.pad(image, self.full_border, mode=self.mode)
         return input_image, mask
@@ -91,7 +91,7 @@ class PadLayer(Layer, Invertible):
             _z = -border[2][1] if image.shape[2] / 2 > border[2][1] > 0 else image.shape[2]
             return image[x_:_x, y_:_y, z_:_z, ...]
         except (IndexError, AssertionError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "Unable to invert the padding. Input: {}, pad param. {}".format(image.shape, border))
             raise
 

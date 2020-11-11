@@ -248,7 +248,7 @@ class ApplicationDriverTest(NiftyNetTestCase):
                 sess.run(test_tensor)
             ModelRestorer(**vars(test_driver)).rand_init_model(None)
             sess.run(test_tensor)
-            _ = sess.run(tf.global_variables())
+            _ = sess.run(tf.compat.v1.global_variables())
 
     def test_from_latest_file_initialisation(self):
         test_driver = get_initialised_driver(-1, False)
@@ -269,7 +269,7 @@ class ApplicationDriverTest(NiftyNetTestCase):
             ModelRestorer(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
-            _ = sess.run(tf.global_variables())
+            _ = sess.run(tf.compat.v1.global_variables())
 
     # def test_not_found_file_initialisation(self):
     #     test_driver = get_initialised_driver(42, False)
@@ -301,7 +301,7 @@ class ApplicationDriverTest(NiftyNetTestCase):
             ModelRestorer(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
-            _ = sess.run(tf.global_variables())
+            _ = sess.run(tf.compat.v1.global_variables())
 
     def test_from_file_finetuning(self):
         test_driver = get_initialised_driver(
@@ -328,8 +328,8 @@ class ApplicationDriverTest(NiftyNetTestCase):
             self.assertAllClose(after_init[0], expected_init)
             # the not matched should be initialised using default initializer
             self.assertEqual(np.any(after_init_negative), False)
-            _ = sess.run(tf.global_variables())
-            bad_init = sess.run(tf.report_uninitialized_variables())
+            _ = sess.run(tf.compat.v1.global_variables())
+            bad_init = sess.run(tf.compat.v1.report_uninitialized_variables())
             self.assertEqual(bad_init.size, 0)
 
 

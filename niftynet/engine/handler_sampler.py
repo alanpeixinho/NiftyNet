@@ -50,7 +50,7 @@ class SamplerThreading(object):
         :return:
         """
         try:
-            tf.logging.info('stopping sampling threads')
+            tf.compat.v1.logging.info('stopping sampling threads')
             for sampler in traverse_nested(sender.get_sampler()):
                 if sampler is None:
                     continue

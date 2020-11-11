@@ -56,7 +56,7 @@ class BalancedSamplerCSV(UniformSampler):
                                    windows_per_image=windows_per_image,
                                    queue_length=queue_length,
                                    name=name)
-        tf.logging.info('Initialised balanced sampler window instance')
+        tf.compat.v1.logging.info('Initialised balanced sampler window instance')
         self.window_centers_sampler = balanced_spatial_coordinates
 
 
@@ -90,7 +90,7 @@ def balanced_spatial_coordinates(
     flatten_map = cropped_map.flatten()
     unique_labels = np.unique(flatten_map)
     if len(unique_labels) > 500:
-        tf.logging.warning(
+        tf.compat.v1.logging.warning(
             "unusual discrete volume: number of unique "
             "labels: %s", len(unique_labels))
 
@@ -116,7 +116,7 @@ def balanced_spatial_coordinates(
                 size=count,
                 replace=True)
         except ValueError:
-            tf.logging.fatal("unable to choose sampling window based on "
+            tf.compat.v1.logging.fatal("unable to choose sampling window based on "
                              "the current frequency map.")
             raise
 

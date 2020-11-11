@@ -41,7 +41,7 @@ class WeightedSampler(UniformSampler):
                                 windows_per_image=windows_per_image,
                                 queue_length=queue_length,
                                 name=name)
-        tf.logging.info('Initialised weighted sampler window instance')
+        tf.compat.v1.logging.info('Initialised weighted sampler window instance')
         self.window_centers_sampler = weighted_spatial_coordinates
 
 
@@ -95,7 +95,7 @@ def weighted_spatial_coordinates(
             else:
                 sample_index = np.argmax(sorted_data >= sample_ratio)
         except ValueError:
-            tf.logging.fatal("unable to choose sampling window based on "
+            tf.compat.v1.logging.fatal("unable to choose sampling window based on "
                              "the current frequency map.")
             raise
         # invert the sample index to the pre-sorted index
@@ -142,7 +142,7 @@ def crop_sampling_map(input_map, win_spatial_size):
             _start[0]:_end[0], _start[1]:_end[1], _start[2]:_end[2], 0, 0]
         assert np.all(cropped_map.shape) > 0
     except (IndexError, KeyError, TypeError, AssertionError):
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             "incompatible map: %s and window size: %s\n"
             "try smaller (fully-specified) spatial window sizes?",
             input_map.shape, win_spatial_size)

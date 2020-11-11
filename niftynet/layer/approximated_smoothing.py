@@ -22,7 +22,7 @@ def gaussian_1d(sigma, truncated=3.0):
     sigma_square = sigma * sigma
     k = [(-0.5 * x * x) / sigma_square for x in range(-tail, tail + 1)]
     k = tf.exp(k)
-    k = k / tf.reduce_sum(k)
+    k = k / tf.reduce_sum(input_tensor=k)
     return k
 
 
@@ -32,8 +32,8 @@ def cauchy_1d(sigma, truncated=5.0):
 
     tail = int(sigma * truncated + 0.5)
     k = [((float(x) / sigma) ** 2 + 1.0) for x in range(-tail, tail + 1)]
-    k = tf.reciprocal(k)
-    k = k / tf.reduce_sum(k)
+    k = tf.math.reciprocal(k)
+    k = k / tf.reduce_sum(input_tensor=k)
     return k
 
 
@@ -92,7 +92,7 @@ class SmoothingLayer(Layer):
             chn_wise_list = tf.unstack(do_conv(input_tensor, dim - 1), axis=-1)
             output_tensor = [
                 tf.nn.convolution(input=tf.expand_dims(chn, axis=-1),
-                                  filter=kernel_tensor,
+                                  filters=kernel_tensor,
                                   padding='SAME',
                                   strides=[1] * spatial_rank)
                 for chn in chn_wise_list]

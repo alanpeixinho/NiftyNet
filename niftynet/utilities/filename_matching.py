@@ -64,14 +64,14 @@ class KeywordsMatching(object):
                         continue
 
                     if not default_folder:
-                        tf.logging.fatal(
+                        tf.compat.v1.logging.fatal(
                             'data input folder "%s" not found, did you maybe '
                             'forget to download data?', path_i)
                         raise ValueError
                     path_def = os.path.join(default_folder, path_i)
                     path_def = os.path.abspath(path_def)
                     if not os.path.exists(path_def):
-                        tf.logging.fatal(
+                        tf.compat.v1.logging.fatal(
                             'data input folder "%s" not found, did you maybe '
                             'forget to download data?', path_i)
                         raise ValueError
@@ -116,7 +116,7 @@ class KeywordsMatching(object):
                 filename_list.remove(fname)
         self.__check_unique_names(filename_list, subjectname_list)
         if not filename_list or not subjectname_list:
-            tf.logging.fatal('no file matched based on this matcher: %s', self)
+            tf.compat.v1.logging.fatal('no file matched based on this matcher: %s', self)
             raise ValueError
         return filename_list, subjectname_list
 
@@ -169,7 +169,7 @@ class KeywordsMatching(object):
                 continue
             id_string = subject_id[0]
             if id_string in uniq_dict:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     'extracted the same unique_id "%s" from '
                     'filenames "%s" and "%s", using matcher: %s',
                     id_string, uniq_dict[id_string], file_list[idx], self)

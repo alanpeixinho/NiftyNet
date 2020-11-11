@@ -37,4 +37,4 @@ class ConsoleLogger(object):
         :param msg: an iteration message instance
         :return:
         """
-        tf.logging.info(msg['iter_msg'].to_console_string())
+        tf.compat.v1.logging.info(msg['iter_msg'].to_console_string())

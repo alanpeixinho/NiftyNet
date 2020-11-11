@@ -46,7 +46,7 @@ def cross_entropy_function(is_real, softness=.1):
             target = softness * tf.ones_like(pred)
         entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred,
                                                           labels=target)
-        return tf.reduce_mean(entropy)
+        return tf.reduce_mean(input_tensor=entropy)
 
     return cross_entropy_op
 

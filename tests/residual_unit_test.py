@@ -29,7 +29,7 @@ class ResidualUnitTest(NiftyNetTestCase):
         output_data = res_layer(input_data)
         print(res_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(expected_shape, out.shape)
 

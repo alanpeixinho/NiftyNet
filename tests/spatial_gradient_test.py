@@ -33,7 +33,7 @@ class SpatialGradientTest(NiftyNetTestCase):
         output_data = gradient_layer(input_data)
         print(gradient_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(output_data)
             if expected_value is not None:
                 self.assertAllClose(expected_value, out)

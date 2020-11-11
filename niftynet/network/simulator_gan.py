@@ -71,8 +71,8 @@ class ImageGenerator(BaseGenerator):
         :param name: layer name
         """
         super(ImageGenerator, self).__init__(name=name)
-        self.initializers = {'w': tf.random_normal_initializer(0, 0.02),
-                             'b': tf.constant_initializer(0.001)}
+        self.initializers = {'w': tf.compat.v1.random_normal_initializer(0, 0.02),
+                             'b': tf.compat.v1.constant_initializer(0.001)}
         self.noise_channels_per_layer = 0
         self.with_conditionings = [True, True, True, True, False]
 
@@ -110,15 +110,15 @@ class ImageGenerator(BaseGenerator):
         if spatial_rank == 3:
             def resize_func(x, sz):
                 sz_x = x.shape.as_list()
-                r1 = tf.image.resize_images(
+                r1 = tf.image.resize(
                     tf.reshape(x, sz_x[:3] + [-1]), sz[0:2])
-                r2 = tf.image.resize_images(
+                r2 = tf.image.resize(
                     tf.reshape(r1, [sz_x[0], sz[0] * sz[1], sz_x[3], -1]),
                     [sz[0] * sz[1], sz[2]])
                 resized_3d = tf.reshape(r2, [sz_x[0]] + sz + [sz_x[-1]])
                 return resized_3d
         elif spatial_rank == 2:
-            resize_func = tf.image.resize_bilinear
+            resize_func = tf.compat.v1.image.resize_bilinear
 
         def concat_cond(x, with_conditioning):
             """
@@ -131,10 +131,10 @@ class ImageGenerator(BaseGenerator):
             if add_noise:
                 feature_shape = x.shape.as_list()[0:-1]
                 noise_shape = feature_shape + [add_noise]
-                noise = [tf.random_normal(noise_shape, 0.0, 0.1)]
+                noise = [tf.random.normal(noise_shape, 0.0, 0.1)]
 
             if with_conditioning and conditioning is not None:
-                with tf.name_scope('concat_conditioning'):
+                with tf.compat.v1.name_scope('concat_conditioning'):
                     spatial_shape = x.shape.as_list()[1:-1]
                     resized_cond = resize_func(conditioning, spatial_shape)
                     return tf.concat([x, resized_cond] + noise, axis=-1)
@@ -148,7 +148,7 @@ class ImageGenerator(BaseGenerator):
             :param x: tensor, input to convolutional layer
             :return: tensor, output of convolutiona layer
             """
-            with tf.name_scope('conv'):
+            with tf.compat.v1.name_scope('conv'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
@@ -165,7 +165,7 @@ class ImageGenerator(BaseGenerator):
             :param x: tensor, input to deconvolutional layer
             :return: tensor, output of deconvolutiona layer
             """
-            with tf.name_scope('up'):
+            with tf.compat.v1.name_scope('up'):
                 deconv_layer = DeconvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
@@ -184,7 +184,7 @@ class ImageGenerator(BaseGenerator):
             :param with_conditioning: boolean, True if conditioning is to be used
             :return: tensor, output of upsampling and concatenation
             """
-            with tf.name_scope('up_block'):
+            with tf.compat.v1.name_scope('up_block'):
                 u = up(ch, x)
                 cond = concat_cond(u, with_conditioning)
                 return conv(cond.shape.as_list()[-1], cond)
@@ -200,7 +200,7 @@ class ImageGenerator(BaseGenerator):
             """
             batch_size = rand_tensor.shape.as_list()[0]
             output_shape = [batch_size] + sz + [ch]
-            with tf.name_scope('noise_to_image'):
+            with tf.compat.v1.name_scope('noise_to_image'):
                 g_no_0 = np.prod(sz) * ch
                 fc_layer = FullyConnectedLayer(
                     n_output_chns=g_no_0,
@@ -220,11 +220,11 @@ class ImageGenerator(BaseGenerator):
             :param x: tensor, input tensor to layers
             :return: tensor, generated image
             """
-            with tf.name_scope('final_image'):
+            with tf.compat.v1.name_scope('final_image'):
                 if add_noise > 0:
                     feature_shape = x.shape.as_list()[0:-1]
                     noise_shape = feature_shape + [add_noise]
-                    noise = tf.random_normal(noise_shape, 0, .1)
+                    noise = tf.random.normal(noise_shape, 0, .1)
                     x = tf.concat([x, noise], axis=3)
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=n_chns,
@@ -236,7 +236,7 @@ class ImageGenerator(BaseGenerator):
                     b_initializer=self.initializers['b'])
                 x_sample = conv_layer(
                     x, is_training=is_training, keep_prob=keep_prob_ph)
-                return tf.image.resize_images(x_sample, image_size[:-1])
+                return tf.image.resize(x_sample, image_size[:-1])
 
         # let the tensors flow...
         flow = random_source
@@ -286,8 +286,8 @@ class ImageDiscriminator(BaseDiscriminator):
         """
         super(ImageDiscriminator, self).__init__(name=name)
 
-        w_init = tf.random_normal_initializer(0, 0.02)
-        b_init = tf.constant_initializer(0.001)
+        w_init = tf.compat.v1.random_normal_initializer(0, 0.02)
+        b_init = tf.compat.v1.constant_initializer(0.001)
         # w_init = tf.contrib.layers.variance_scaling_initializer()
         # b_init = tf.constant_initializer(0)
 
@@ -312,7 +312,7 @@ class ImageDiscriminator(BaseDiscriminator):
             :param x: tensor, input to the convolutional layer
             :return: tensor, output of the convolutional layer
             """
-            with tf.name_scope('downsample'):
+            with tf.compat.v1.name_scope('downsample'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
@@ -364,7 +364,7 @@ class ImageDiscriminator(BaseDiscriminator):
             :param x: tensor, input to the convolutional layer
             :return: tensor, output of downsampling + conv + conv
             """
-            with tf.name_scope('down_resnet'):
+            with tf.compat.v1.name_scope('down_resnet'):
                 s = down(ch, x)
                 r = convr(ch, s)
                 return conv(ch, r, s)
@@ -376,7 +376,7 @@ class ImageDiscriminator(BaseDiscriminator):
             :param image: tensor, input image to discriminator
             :return: tensor, output of conv(image) --> conv --> conv
             """
-            with tf.name_scope('feature'):
+            with tf.compat.v1.name_scope('feature'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=5,
@@ -396,7 +396,7 @@ class ImageDiscriminator(BaseDiscriminator):
             :param features: tensor, input features for final classification
             :return: tensor, output logits of discriminator classification
             """
-            with tf.name_scope('fully_connected'):
+            with tf.compat.v1.name_scope('fully_connected'):
                 # with bn?
                 fc_layer = FullyConnectedLayer(
                     n_output_chns=ch, feature_normalization=None, with_bias=True)

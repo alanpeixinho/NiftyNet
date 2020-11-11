@@ -57,7 +57,7 @@ class ImageWindowsAggregator(object):
         try:
             self._image_id = int(current_id)
         except (ValueError, TypeError):
-            tf.logging.fatal("unknown image id format (should be an integer)")
+            tf.compat.v1.logging.fatal("unknown image id format (should be an integer)")
 
     def decode_batch(self, *args, **kwargs):
         """
@@ -112,7 +112,7 @@ class ImageWindowsAggregator(object):
         left = np.floor(
             (spatial_shape - cropped_shape[:n_spatial])/2.0).astype(np.int)
         if np.any(left < 0):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'network output window can be '
                 'cropped by specifying the border parameter in config file, '
                 'but here the output window content size %s is smaller '
@@ -137,7 +137,7 @@ class ImageWindowsAggregator(object):
                             left[2]:(left[2] + cropped_shape[2]),
                             ...]
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'unknown output format: shape %s'
                 ' spatial dims are: %s', window_shape, spatial_shape)
             raise NotImplementedError

@@ -32,7 +32,7 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
                  num_threads=4,
                  smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
-        tf.logging.info('reading size of preprocessed images')
+        tf.compat.v1.logging.info('reading size of preprocessed images')
         self.csv_reader = csv_reader
         ImageWindowDatasetCSV.__init__(
             self,

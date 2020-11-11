@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.vnet import VNetBlock
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -32,7 +32,7 @@ class VNetBlockTest(NiftyNetTestCase):
         print(vnet_block_op)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 16, 16, 16, 16), out_1.shape)
             out_2 = sess.run(out_2)
@@ -61,7 +61,7 @@ class VNetBlockTest(NiftyNetTestCase):
         print(vnet_block_op)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 16, 16, 16), out_1.shape)
             out_2 = sess.run(out_2)
@@ -78,25 +78,25 @@ class VNetBlockTest(NiftyNetTestCase):
     def test_3d_reg_shape(self):
         x = self.get_3d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_1, out_2 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_3, out_4 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_5, out_6 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 16, 16, 16, 16), out_1.shape)
             out_2 = sess.run(out_2)
@@ -113,25 +113,25 @@ class VNetBlockTest(NiftyNetTestCase):
     def test_2d_reg_shape(self):
         x = self.get_2d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_1, out_2 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_3, out_4 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.2))
         out_5, out_6 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 16, 16, 16), out_1.shape)
             out_2 = sess.run(out_2)

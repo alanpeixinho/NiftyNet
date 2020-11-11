@@ -62,10 +62,10 @@ class ModelRestorer(object):
         :param _unused:
         :return:
         """
-        with tf.name_scope('Initialisation'):
+        with tf.compat.v1.name_scope('Initialisation'):
             init_op = global_vars_init_or_restore()
-        tf.get_default_session().run(init_op)
-        tf.logging.info('Parameters from random initialisations ...')
+        tf.compat.v1.get_default_session().run(init_op)
+        tf.compat.v1.logging.info('Parameters from random initialisations ...')
 
     def restore_model(self, _sender, **_unused):
         """
@@ -82,30 +82,30 @@ class ModelRestorer(object):
 
         if self.vars_to_restore:
             # partially restore (updating `to_restore` list)
-            tf.logging.info("Finding variables to restore...")
+            tf.compat.v1.logging.info("Finding variables to restore...")
             import re
             # Determine which vars to
             # restore using regex matching
             var_regex = re.compile(self.vars_to_restore)
             to_restore, to_randomise = [], []
-            for restorable in tf.global_variables():
+            for restorable in tf.compat.v1.global_variables():
                 if var_regex.search(restorable.name):
                     to_restore.append(restorable)
                 else:
                     to_randomise.append(restorable)
 
             if not to_restore:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     'vars_to_restore specified: %s, but nothing matched.',
                     self.vars_to_restore)
                 assert to_restore, 'Nothing to restore (--vars_to_restore)'
 
             var_names = [  # getting first three item to print
                 var_restore.name for var_restore in to_restore[:3]]
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'Restoring %s out of %s variables from %s: \n%s, ...',
                 len(to_restore),
-                len(tf.global_variables()),
+                len(tf.compat.v1.global_variables()),
                 checkpoint, ',\n'.join(var_names))
         else:
             to_restore = tf.global_variables()
@@ -119,21 +119,21 @@ class ModelRestorer(object):
 
         # Initialize vars to randomize
         if len(to_randomise)>0:
-            init_op = tf.variables_initializer(to_randomise)
-            tf.get_default_session().run(init_op)
+#             import pdb; pdb.set_trace()
+            init_op = tf.compat.v1.variables_initializer(to_randomise)
+            tf.compat.v1.get_default_session().run(init_op)
 
         try:
-            print('handler model: ', to_restore, to_randomise)
-            saver = tf.train.Saver(
+            saver = tf.compat.v1.train.Saver(
                 var_list=to_restore, save_relative_paths=True)
-            saver.restore(tf.get_default_session(), checkpoint)
+            saver.restore(tf.compat.v1.get_default_session(), checkpoint)
         except tf.errors.NotFoundError:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'checkpoint %s not found or variables to restore do not '
                 'match the current application graph', checkpoint)
             dir_name = os.path.dirname(checkpoint)
             if dir_name and not os.path.exists(dir_name):
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     "Model folder not found %s, please check"
                     "config parameter: model_dir", dir_name)
             raise
@@ -173,7 +173,7 @@ class ModelSaver(object):
         :param _unused:
         :return:
         """
-        self.saver = tf.train.Saver(
+        self.saver = tf.compat.v1.train.Saver(
             max_to_keep=self.max_checkpoints, save_relative_paths=True)
 
     def save_model(self, _sender, **msg):
@@ -211,7 +211,7 @@ class ModelSaver(object):
         """
         if not self.saver:
             return
-        self.saver.save(sess=tf.get_default_session(),
+        self.saver.save(sess=tf.compat.v1.get_default_session(),
                         save_path=self.file_name_prefix,
                         global_step=iter_i)
-        tf.logging.info('iter %d saved: %s', iter_i, self.file_name_prefix)
+        tf.compat.v1.logging.info('iter %d saved: %s', iter_i, self.file_name_prefix)

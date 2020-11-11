@@ -115,7 +115,7 @@ class UNet2D(BaseNet):
                           with_bias=True,
                           feature_normalization=None)
         output_tensor = classifier(output_1)
-        tf.logging.info('output shape %s', output_tensor.shape)
+        tf.compat.v1.logging.info('output shape %s', output_tensor.shape)
         return output_tensor
 
 

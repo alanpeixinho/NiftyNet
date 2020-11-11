@@ -58,7 +58,7 @@ class EvaluationApplicationDriver(object):
             eval_param = workflow_param.get('EVALUATION', None)
             app_param = workflow_param.get('CUSTOM', None)
         except AttributeError:
-            tf.logging.fatal('parameters should be dictionaries')
+            tf.compat.v1.logging.fatal('parameters should be dictionaries')
             raise
         self.num_threads = 1
         # self.num_threads = max(system_param.num_threads, 1)
@@ -126,7 +126,7 @@ class EvaluationApplicationDriver(object):
                                        'eval_' + csv_id + '.csv'), 'w') as csv:
                     csv.write(data_frame.reset_index().to_csv(index=False))
         except KeyboardInterrupt:
-            tf.logging.warning('User cancelled application')
+            tf.compat.v1.logging.warning('User cancelled application')
         except RuntimeError:
             import sys
             import traceback
@@ -134,7 +134,7 @@ class EvaluationApplicationDriver(object):
             traceback.print_exception(
                 exc_type, exc_value, exc_traceback, file=sys.stdout)
         finally:
-            tf.logging.info('Cleaning up...')
-            tf.logging.info(
+            tf.compat.v1.logging.info('Cleaning up...')
+            tf.compat.v1.logging.info(
                 "%s stopped (time in second %.2f).",
                 type(application).__name__, (time.time() - start_time))

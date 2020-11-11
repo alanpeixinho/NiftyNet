@@ -26,4 +26,4 @@ class BaseNet(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        tf.logging.info('using {}'.format(name))
+        tf.compat.v1.logging.info('using {}'.format(name))

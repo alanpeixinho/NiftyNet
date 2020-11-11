@@ -42,7 +42,7 @@ class SegmentationApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         super(SegmentationApplication, self).__init__()
-        tf.logging.info('starting segmentation application')
+        tf.compat.v1.logging.info('starting segmentation application')
         self.action = action
 
         self.net_param = net_param
@@ -86,7 +86,7 @@ class SegmentationApplication(BaseApplication):
         elif self.is_export:
             reader_names = ('image',)
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -291,13 +291,13 @@ class SegmentationApplication(BaseApplication):
         reg_type = self.net_param.reg_type.lower()
         decay = self.net_param.decay
         if reg_type == 'l2' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l2_regularizer(decay)
-            b_regularizer = regularizers.l2_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L2(decay)
+            b_regularizer = regularizers.L2(decay)
         elif reg_type == 'l1' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l1_regularizer(decay)
-            b_regularizer = regularizers.l1_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L1(decay)
+            b_regularizer = regularizers.L1(decay)
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=self.segmentation_param.num_classes,
@@ -315,7 +315,7 @@ class SegmentationApplication(BaseApplication):
 
         print('connect data and network')
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
@@ -326,17 +326,17 @@ class SegmentationApplication(BaseApplication):
             mix_fields = ('image', 'weight', 'label')
 
             if not for_training:
-                with tf.name_scope('nomix'):
+                with tf.compat.v1.name_scope('nomix'):
                     # ensure label is appropriate for dense loss functions
                     ground_truth = tf.cast(d_dict['label'], tf.int32)
                     one_hot = tf.one_hot(tf.squeeze(ground_truth, axis=-1),
                                          depth=self.segmentation_param.num_classes)
                     d_dict['label'] = one_hot
             else:
-                with tf.name_scope('mixup'):
+                with tf.compat.v1.name_scope('mixup'):
                     # get the mixing parameter from the Beta distribution
                     alpha = self.segmentation_param.mixup_alpha
-                    beta = tf.distributions.Beta(alpha, alpha)  # 1, 1: uniform:
+                    beta = tf.compat.v1.distributions.Beta(alpha, alpha)  # 1, 1: uniform:
                     rand_frac = beta.sample()
 
                     # get another minibatch
@@ -369,21 +369,21 @@ class SegmentationApplication(BaseApplication):
 
         if self.is_training:
             if not self.segmentation_param.do_mixup:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 # mix up the samples if not in validation phase
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: mixup_switch_sampler(for_training=True),
-                                    lambda: mixup_switch_sampler(for_training=False))  # don't mix the validation
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: mixup_switch_sampler(for_training=True),
+                                    false_fn=lambda: mixup_switch_sampler(for_training=False))  # don't mix the validation
 
             image = tf.cast(data_dict['image'], tf.float32)
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -396,16 +396,16 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
 
             # Get all vars
-            to_optimise = tf.trainable_variables()
+            to_optimise = tf.compat.v1.trainable_variables()
             vars_to_freeze = \
                 self.action_param.vars_to_freeze or \
                 self.action_param.vars_to_restore
@@ -415,15 +415,15 @@ class SegmentationApplication(BaseApplication):
                 # Only optimise vars that are not frozen
                 to_optimise = \
                     [v for v in to_optimise if not var_regex.search(v.name)]
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     "Optimizing %d out of %d trainable variables, "
                     "the other variables fixed (--vars_to_freeze %s)",
                     len(to_optimise),
-                    len(tf.trainable_variables()),
+                    len(tf.compat.v1.trainable_variables()),
                     vars_to_freeze)
 
             grads = self.optimiser.compute_gradients(
-                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise)
 
             self.total_loss = loss
 
@@ -530,7 +530,7 @@ class SegmentationApplication(BaseApplication):
         return self.add_inferred_output_like(data_param, task_param, 'label')
 
     def tensorboard_image_normalize(self, x):
-        immin, immax = tf.reduce_min(x), tf.reduce_max(x)
+        immin, immax = tf.reduce_min(input_tensor=x), tf.reduce_max(input_tensor=x)
         log = ((x - immin) / immax) * 255
         return log
 

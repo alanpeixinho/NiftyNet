@@ -23,7 +23,7 @@ class AutoencoderApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting autoencoder application')
+        tf.compat.v1.logging.info('starting autoencoder application')
 
         self.action = action
 
@@ -109,13 +109,13 @@ class AutoencoderApplication(BaseApplication):
         reg_type = self.net_param.reg_type.lower()
         decay = self.net_param.decay
         if reg_type == 'l2' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l2_regularizer(decay)
-            b_regularizer = regularizers.l2_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L2(decay)
+            b_regularizer = regularizers.L2(decay)
         elif reg_type == 'l1' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l1_regularizer(decay)
-            b_regularizer = regularizers.l1_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L1(decay)
+            b_regularizer = regularizers.L1(decay)
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             w_regularizer=w_regularizer,
@@ -125,7 +125,7 @@ class AutoencoderApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
@@ -133,16 +133,16 @@ class AutoencoderApplication(BaseApplication):
             self.patience = self.action_param.patience
             self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(True),
-                                    lambda: switch_sampler(False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(True),
+                                    false_fn=lambda: switch_sampler(False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
             net_output = self.net(image, is_training=self.is_training)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -152,16 +152,16 @@ class AutoencoderApplication(BaseApplication):
             data_loss = loss_func(net_output)
             loss = data_loss
             if self.net_param.decay > 0.0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                reg_losses = tf.compat.v1.get_collection(
+                    tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
                 if reg_losses:
                     reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                        input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                     loss = loss + reg_loss
 
             self.total_loss = loss
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
 
@@ -223,7 +223,7 @@ class AutoencoderApplication(BaseApplication):
                 net_output = self.net(dummy_image, is_training=False)
                 noise_shape = net_output[-1].shape.as_list()
                 stddev = self.autoencoder_param.noise_stddev
-                noise = tf.random_normal(shape=noise_shape,
+                noise = tf.random.normal(shape=noise_shape,
                                          mean=0.0,
                                          stddev=stddev,
                                          dtype=tf.float32)

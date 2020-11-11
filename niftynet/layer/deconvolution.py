@@ -29,7 +29,7 @@ def default_w_initializer():
 
 
 def default_b_initializer():
-    return tf.constant_initializer(0.0)
+    return tf.compat.v1.constant_initializer(0.0)
 
 
 def infer_output_dims(input_dims, strides, kernel_sizes, padding):
@@ -99,7 +99,7 @@ class DeconvLayer(TrainableLayer):
             self.stride, spatial_rank)
         full_stride = (1,) + stride_all_dim + (1,)
 
-        deconv_kernel = tf.get_variable(
+        deconv_kernel = tf.compat.v1.get_variable(
             'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -116,7 +116,7 @@ class DeconvLayer(TrainableLayer):
             if i == 0:
                 continue
             if dim is None:
-                spatial_shape.append(tf.shape(input_tensor)[i])
+                spatial_shape.append(tf.shape(input=input_tensor)[i])
             else:
                 spatial_shape.append(dim)
         output_dims = infer_output_dims(spatial_shape,
@@ -127,11 +127,11 @@ class DeconvLayer(TrainableLayer):
             full_output_size = \
                 [input_shape[0]] + output_dims + [self.n_output_chns]
         else:
-            batch_size = tf.shape(input_tensor)[0]
+            batch_size = tf.shape(input=input_tensor)[0]
             full_output_size = tf.stack(
                 [batch_size] + output_dims + [self.n_output_chns])
-        output_tensor = op_(value=input_tensor,
-                            filter=deconv_kernel,
+        output_tensor = op_(input=input_tensor,
+                            filters=deconv_kernel,
                             output_shape=full_output_size,
                             strides=full_stride,
                             padding=self.padding,
@@ -141,7 +141,7 @@ class DeconvLayer(TrainableLayer):
 
         # adding the bias term
         bias_full_size = (self.n_output_chns,)
-        bias_term = tf.get_variable(
+        bias_term = tf.compat.v1.get_variable(
             'b', shape=bias_full_size,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])

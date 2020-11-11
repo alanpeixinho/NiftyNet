@@ -86,9 +86,9 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
     if mode == 'mean':
         performance_to_consider = performance_history[:-1]
         thresh = np.mean(performance_to_consider)
-        tf.logging.info("====Mean====")
-        tf.logging.info(thresh)
-        tf.logging.info(performance_history[-1])
+        tf.compat.v1.logging.info("====Mean====")
+        tf.compat.v1.logging.info(thresh)
+        tf.compat.v1.logging.info(performance_history[-1])
         should_stop = performance_history[-1] > thresh
 
     elif mode == 'robust_mean':
@@ -124,8 +124,8 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
         for strip in strips:
             generalisation_loss = compute_generalisation_loss(strip)
             gl_increase.append(generalisation_loss >= min_delta)
-        tf.logging.info("====Validation_up====")
-        tf.logging.info(gl_increase)
+        tf.compat.v1.logging.info("====Validation_up====")
+        tf.compat.v1.logging.info(gl_increase)
         should_stop = False not in gl_increase
     else:
         raise Exception('Mode: {} provided is not supported'.format(mode))

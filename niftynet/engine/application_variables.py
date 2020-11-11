@@ -6,7 +6,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 # pylint: disable=no-name-in-module
-from tensorflow.contrib.framework import list_variables
+from tensorflow.train import list_variables
 
 from niftynet.io.misc_io import \
     image3_axial, image3_coronal, image3_sagittal, resolve_checkpoint
@@ -16,10 +16,10 @@ from niftynet.utilities.restore_initializer import restore_initializer
 RESTORABLE = 'NiftyNetObjectsToRestore'
 NETWORK_OUTPUT = 'niftynetout'
 CONSOLE = 'niftynetconsole'
-TF_SUMMARIES = tf.GraphKeys.SUMMARIES
-SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
-                     'histogram': tf.summary.histogram,
-                     'image': tf.summary.image,
+TF_SUMMARIES = tf.compat.v1.GraphKeys.SUMMARIES
+SUPPORTED_SUMMARY = {'scalar': tf.compat.v1.summary.scalar,
+                     'histogram': tf.compat.v1.summary.histogram,
+                     'image': tf.compat.v1.summary.image,
                      'image3_sagittal': image3_sagittal,
                      'image3_coronal': image3_coronal,
                      'image3_axial': image3_axial}
@@ -104,13 +104,13 @@ class OutputsCollector(object):
             try:
                 var_list.append(var)
             except AttributeError:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     "averaged variable name %s has been taken", name)
                 raise
             print('new_name_avg', name)
             var_dict[name] = var_list
             if len(var_list) > self.n_devices:
-                tf.logging.fatal("averaged variable %s has been used "
+                tf.compat.v1.logging.fatal("averaged variable %s has been used "
                                  "in the collector", name)
                 raise ValueError
             return name
@@ -176,7 +176,7 @@ class OutputsCollector(object):
         elif collection == NETWORK_OUTPUT:
             return self.output_vars
         else:
-            tf.logging.fatal("unknown output %s", collection)
+            tf.compat.v1.logging.fatal("unknown output %s", collection)
             raise ValueError
 
     def finalise_output_op(self):
@@ -190,7 +190,7 @@ class OutputsCollector(object):
         self._average_variables_over_devices(self.console_vars, False)
         self._average_variables_over_devices(self.output_vars, False)
         self._average_variables_over_devices(self.summary_vars, True)
-        self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
+        self._merge_op = tf.compat.v1.summary.merge_all(key=TF_SUMMARIES)
 
     def _add_to_network_output(self, var, name, average_over_devices=False):
         """
@@ -217,7 +217,7 @@ class OutputsCollector(object):
         if isinstance(values, tf.Tensor):
             summary_op = util.look_up_operations(summary_type,
                                                  SUPPORTED_SUMMARY)
-            with tf.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
+            with tf.compat.v1.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
                 summary_op(name, values, collections=[TF_SUMMARIES])
 
     @staticmethod
@@ -230,11 +230,11 @@ class OutputsCollector(object):
             values = var_dict.get(var_name, None)
             if not isinstance(values, list):
                 continue
-            var_dict[var_name] = tf.reduce_mean(values, name=var_name)
+            var_dict[var_name] = tf.reduce_mean(input_tensor=values, name=var_name)
             if create_tf_summary_op:
                 # for the averaged variables use scalar summary only
-                with tf.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
-                    tf.summary.scalar(name='{}'.format(var_name),
+                with tf.compat.v1.name_scope(''):#to remove scope from tensorboard tags we define an empty scope
+                    tf.compat.v1.summary.scalar(name='{}'.format(var_name),
                                       tensor=var_dict[var_name],
                                       collections=[TF_SUMMARIES])
 
@@ -247,12 +247,12 @@ def global_vars_init_or_restore(var_list=None):
     specified checkpoint and no scope ancestor can restore it.
     """
     if var_list is None:
-        var_list = tf.global_variables()
-    restorable = sorted(tf.get_collection(RESTORABLE), key=lambda x: x[0])
+        var_list = tf.compat.v1.global_variables()
+    restorable = sorted(tf.compat.v1.get_collection(RESTORABLE), key=lambda x: x[0])
     restored_vars = {}
     for scope, checkpoint_name, checkpoint_scope in restorable:
-        variables_in_scope = tf.get_collection(
-            tf.GraphKeys.GLOBAL_VARIABLES, scope=scope)
+        variables_in_scope = tf.compat.v1.get_collection(
+            tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope=scope)
         checkpoint_file = resolve_checkpoint(checkpoint_name)
         variables_in_file = [v for (v, _) in list_variables(checkpoint_file)]
         rename = lambda x: x.replace(scope, checkpoint_scope).replace(':0', '')
@@ -267,9 +267,9 @@ def global_vars_init_or_restore(var_list=None):
                 checkpoint_subscope, var_name = None, rename(var.name)
             initializer = restore_initializer(
                 checkpoint_name, var_name, checkpoint_subscope)
-            restored_vars[var] = tf.assign(
+            restored_vars[var] = tf.compat.v1.assign(
                 var, initializer(var.shape, dtype=var.dtype))
-    init_others = tf.variables_initializer(
+    init_others = tf.compat.v1.variables_initializer(
         [v for v in var_list if v not in restored_vars])
     restore_op = tf.group(init_others, *list(restored_vars.values()))
     return restore_op

@@ -65,10 +65,10 @@ def variational_lower_bound(prediction):
     # batch_size = tf.shape(log_likelihood)[0]
     batch_size = log_likelihood.shape.as_list()[0]
     log_likelihood = tf.reshape(log_likelihood, shape=[batch_size, -1])
-    log_likelihood = -0.5 * tf.reduce_sum(log_likelihood, axis=[1])
+    log_likelihood = -0.5 * tf.reduce_sum(input_tensor=log_likelihood, axis=[1])
 
     KL_divergence = 1 + posterior_logvar \
                     - tf.square(posterior_means) \
                     - tf.exp(posterior_logvar)
-    KL_divergence = -0.5 * tf.reduce_sum(KL_divergence, axis=[1])
-    return tf.reduce_mean(KL_divergence - log_likelihood)
+    KL_divergence = -0.5 * tf.reduce_sum(input_tensor=KL_divergence, axis=[1])
+    return tf.reduce_mean(input_tensor=KL_divergence - log_likelihood)

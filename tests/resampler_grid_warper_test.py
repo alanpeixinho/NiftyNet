@@ -188,7 +188,7 @@ class image_test(NiftyNetTestCase):
             test_target, target_shape = get_multiple_3d_targets()
             identity_affine = [[1., 0., 0., 0., 1., 0.,
                                 1., 0., 0., 0., 1., 0.]] * 4
-        affine_var = tf.get_variable('affine', initializer=identity_affine)
+        affine_var = tf.compat.v1.get_variable('affine', initializer=identity_affine)
         grid = AffineGridWarperLayer(source_shape=input_shape[1:-1],
                                      output_shape=target_shape[1:-1],
                                      constraints=None)
@@ -197,13 +197,13 @@ class image_test(NiftyNetTestCase):
         new_image = resampler(tf.constant(test_image, dtype=tf.float32),
                               warp_coords)
 
-        diff = tf.reduce_mean(tf.squared_difference(
+        diff = tf.reduce_mean(input_tensor=tf.math.squared_difference(
             new_image, tf.constant(test_target, dtype=tf.float32)))
-        optimiser = tf.train.AdagradOptimizer(0.01)
+        optimiser = tf.compat.v1.train.AdagradOptimizer(0.01)
         grads = optimiser.compute_gradients(diff)
         opt = optimiser.apply_gradients(grads)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             init_val, affine_val = sess.run([diff, affine_var])
             for _ in range(5):
                 _, diff_val, affine_val = sess.run([opt, diff, affine_var])
@@ -262,7 +262,7 @@ class image_2D_test_converge(NiftyNetTestCase):
                            [1., 0., 0., 0., 1., 0.],
                            [1., 0., 0., 0., 1., 0.],
                            [1., 0., 0., 0., 1., 0.]]
-        affine_var = tf.get_variable('affine', initializer=identity_affine)
+        affine_var = tf.compat.v1.get_variable('affine', initializer=identity_affine)
         grid = AffineGridWarperLayer(source_shape=input_shape[1:-1],
                                      output_shape=target_shape[1:-1],
                                      constraints=None)
@@ -271,16 +271,16 @@ class image_2D_test_converge(NiftyNetTestCase):
         new_image = resampler(tf.constant(test_image, dtype=tf.float32),
                               warp_coords)
 
-        diff = tf.reduce_mean(tf.squared_difference(
+        diff = tf.reduce_mean(input_tensor=tf.math.squared_difference(
             new_image, tf.constant(test_target, dtype=tf.float32)))
         learning_rate = 0.05
         if(interpolation == 'linear') and (boundary == 'zero'):
             learning_rate = 0.0003
-        optimiser = tf.train.AdagradOptimizer(learning_rate)
+        optimiser = tf.compat.v1.train.AdagradOptimizer(learning_rate)
         grads = optimiser.compute_gradients(diff)
         opt = optimiser.apply_gradients(grads)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             init_val, affine_val = sess.run([diff, affine_var])
             # compute the MAE between the initial estimated parameters and the expected parameters
             init_var_diff = np.sum(np.abs(affine_val[0] - expected))

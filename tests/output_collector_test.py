@@ -18,7 +18,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 1
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 bar = tf.zeros([42])
@@ -41,7 +41,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 bar = tf.zeros([42])
@@ -66,7 +66,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 1
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 collector.add_to_collection(name='image',
@@ -84,7 +84,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 bar = tf.zeros([42])
@@ -114,7 +114,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 1
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 collector.add_to_collection(name='image',
@@ -132,7 +132,7 @@ class OutputCollectorTest(NiftyNetTestCase):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx):
+            with tf.compat.v1.name_scope('worker_%d' % idx):
                 image = tf.ones([2, 32, 32, 32, 1])
                 foo = tf.zeros([2, 2])
                 bar = tf.zeros([42])

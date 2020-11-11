@@ -245,15 +245,15 @@ class ResamplerTest(NiftyNetTestCase):
 
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
-        input_default = tf.random_uniform(input.shape)
+        input_default = tf.random.uniform(input.shape)
         if batch_size > 0 and rank > 0:
-            input_placeholder = tf.placeholder_with_default(
+            input_placeholder = tf.compat.v1.placeholder_with_default(
                 input_default, shape=[batch_size] + [None] * (rank + 1))
         elif batch_size <= 0 and rank > 0:
-            input_placeholder = tf.placeholder_with_default(
+            input_placeholder = tf.compat.v1.placeholder_with_default(
                 input_default, shape=[None] * (rank + 2))
         elif batch_size <= 0 and rank <= 0:
-            input_placeholder = tf.placeholder_with_default(
+            input_placeholder = tf.compat.v1.placeholder_with_default(
                 input_default, shape=None)
 
         out = resampler(input_placeholder, grid)

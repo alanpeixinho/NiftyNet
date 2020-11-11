@@ -152,7 +152,7 @@ class CRFAsRNNLayer(TrainableLayer):
         if self._mu_init is None:
             self._mu_init = -np.eye(n_ch)
         self._mu_init = np.reshape(self._mu_init, mu_shape)
-        mu = tf.get_variable(
+        mu = tf.compat.v1.get_variable(
             'Compatibility',
             initializer=tf.constant(self._mu_init, dtype=tf.float32))
 
@@ -162,7 +162,7 @@ class CRFAsRNNLayer(TrainableLayer):
             self._w_init = [np.ones(n_ch), np.ones(n_ch)]
         self._w_init = [
             np.reshape(_w, weight_shape) for _w in self._w_init]
-        kernel_weights = [tf.get_variable(
+        kernel_weights = [tf.compat.v1.get_variable(
             'FilterWeights{}'.format(idx),
             initializer=tf.constant(self._w_init[idx], dtype=tf.float32))
             for idx, k in enumerate(permutohedrals)]
@@ -240,7 +240,7 @@ def permutohedral_prepare(position_vectors):
 
     # Compute coordinates
     # Get closest remainder-0 point
-    v = tf.to_int32(tf.round(Ex / float(n_ch_1)))
+    v = tf.cast(tf.round(Ex / float(n_ch_1)), dtype=tf.int32)
     rem0 = v * n_ch_1
 
     # Find the simplex we are in and store it in rank
@@ -248,19 +248,19 @@ def permutohedral_prepare(position_vectors):
     # in the sorted order of the features values).
     # This can be done more efficiently
     # if necessary following the permutohedral paper.
-    index = tf.nn.top_k(Ex - tf.to_float(rem0), n_ch_1, sorted=True).indices
+    index = tf.nn.top_k(Ex - tf.cast(rem0, dtype=tf.float32), n_ch_1, sorted=True).indices
     rank = tf.nn.top_k(-index, n_ch_1, sorted=True).indices
 
     # if the point doesn't lie on the plane (sum != 0) bring it back
     # (sum(v) != 0)  meaning off the plane
-    rank = rank + tf.reduce_sum(v, 1, True)
-    add_minus_sub = tf.to_int32(rank < 0) - tf.to_int32(rank > n_ch)
+    rank = rank + tf.reduce_sum(input_tensor=v, axis=1, keepdims=True)
+    add_minus_sub = tf.cast(rank < 0, dtype=tf.int32) - tf.cast(rank > n_ch, dtype=tf.int32)
     add_minus_sub *= n_ch_1
     rem0 = rem0 + add_minus_sub
     rank = rank + add_minus_sub
 
     # Compute the barycentric coordinates (p.10 in [Adams et al 2010])
-    v2 = (Ex - tf.to_float(rem0)) / float(n_ch_1)
+    v2 = (Ex - tf.cast(rem0, dtype=tf.float32)) / float(n_ch_1)
     # CRF2RNN uses the calculated ranks to get v2 sorted in O(n_ch) time
     # We cheat here by using the easy to implement
     # but slower method of sorting again in O(n_ch log n_ch)
@@ -279,7 +279,7 @@ def permutohedral_prepare(position_vectors):
             int(np.floor(np.power(tf.int64.max, 1. / (n_ch + 2)))),
             [range(1, n_ch_1)])
         hash_vector = tf.constant(hash_vector, dtype=tf.int64)
-        return tf.reduce_sum(tf.to_int64(key) * hash_vector, 1)
+        return tf.reduce_sum(input_tensor=tf.cast(key, dtype=tf.int64) * hash_vector, axis=1)
 
     # This is done so if the user had TF 1.12.1 or a new version the code
     # does not brake. First part of the try is for TF 1.12.1 where the
@@ -334,11 +334,11 @@ def permutohedral_prepare(position_vectors):
         loc[scit] = tf.gather(canonical[scit], rank[:, :-1]) + rem0[:, :-1]
         loc_hash[scit] = _simple_hash(loc[scit])
         insert_ops.append(
-            hash_table.insert(loc_hash[scit], tf.to_int64(loc[scit])))
+            hash_table.insert(loc_hash[scit], tf.cast(loc[scit], dtype=tf.int64)))
 
     with tf.control_dependencies(insert_ops):
         fused_loc_hash, fused_loc = hash_table.export()
-        is_good_key = tf.where(tf.not_equal(fused_loc_hash, -2))[:, 0]
+        is_good_key = tf.compat.v1.where(tf.not_equal(fused_loc_hash, -2))[:, 0]
         fused_loc = tf.gather(fused_loc, is_good_key)
         fused_loc_hash = tf.gather(fused_loc_hash, is_good_key)
 
@@ -346,7 +346,7 @@ def permutohedral_prepare(position_vectors):
     # linearise the hash table so that we can `tf.scatter` and `tf.gather`
     # (range_id 0 reserved for the indextable's default value)
     range_id = tf.range(
-        1, tf.size(fused_loc_hash, out_type=tf.int64) + 1, dtype=tf.int64)
+        1, tf.size(input=fused_loc_hash, out_type=tf.int64) + 1, dtype=tf.int64)
     range_id = tf.expand_dims(range_id, 1)
     insert_indices = index_table.insert(fused_loc_hash, range_id)
 
@@ -355,7 +355,7 @@ def permutohedral_prepare(position_vectors):
     batch_index = tf.range(batch_size, dtype=tf.int32)
     batch_index = tf.expand_dims(batch_index, 1)
     batch_index = tf.tile(batch_index, [1, n_voxels])
-    batch_index = tf.to_int64(tf.reshape(batch_index, [-1]))
+    batch_index = tf.cast(tf.reshape(batch_index, [-1]), dtype=tf.int64)
 
     indices = [None] * n_ch_1
     blur_neighbours1 = [None] * n_ch_1
@@ -401,18 +401,18 @@ def permutohedral_compute(data_vectors,
     data_vectors = tf.reshape(data_vectors, [-1, n_ch_data])
 
     # Splatting
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         splat = tf.contrib.framework.local_variable(
             tf.constant(0.0), validate_shape=False, name='splatbuffer')
 
     # with tf.control_dependencies([splat.initialized_value()]):
     initial_splat = tf.zeros(
-        [tf.shape(blur_neighbours1[0])[0] + 1, batch_size, n_ch_data])
-    reset_splat = tf.assign(splat, initial_splat, validate_shape=False)
+        [tf.shape(input=blur_neighbours1[0])[0] + 1, batch_size, n_ch_data])
+    reset_splat = tf.compat.v1.assign(splat, initial_splat, validate_shape=False)
     with tf.control_dependencies([reset_splat]):
         for scit in range(num_simplex_corners):
             data = data_vectors * barycentric[:, scit:scit + 1]
-            splat = tf.scatter_nd_add(splat, indices[scit], data)
+            splat = tf.compat.v1.scatter_nd_add(splat, indices[scit], data)
 
     # Blur with 1D kernels
     for dit in range(n_ch, -1, -1) if reverse else range(n_ch + 1):
@@ -454,8 +454,8 @@ def _py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
     rnd_name = 'PyFuncGrad' + str(uuid.uuid4())
     # tf.logging.info('CRFasRNN layer iteration {}'.format(rnd_name))
     tf.RegisterGradient(rnd_name)(grad)  # see _MySquareGrad for grad example
-    with tf.get_default_graph().gradient_override_map({"PyFunc": rnd_name}):
-        return tf.py_func(func, inp, Tout, stateful=stateful, name=name)[0]
+    with tf.compat.v1.get_default_graph().gradient_override_map({"PyFunc": rnd_name}):
+        return tf.compat.v1.py_func(func, inp, Tout, stateful=stateful, name=name)[0]
 
 
 def _gradient_stub(data_vectors,

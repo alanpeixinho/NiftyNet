@@ -49,7 +49,7 @@ class RandomVectorSampler(ImageWindowDataset):
             name=name)
         self.window = ImageWindow(shapes={names[0]: vector_size},
                                   dtypes={names[0]: tf.float32})
-        tf.logging.info("initialised sampler output %s ", self.window.shapes)
+        tf.compat.v1.logging.info("initialised sampler output %s ", self.window.shapes)
 
     def layer_op(self):
         """

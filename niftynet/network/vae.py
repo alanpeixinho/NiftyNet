@@ -182,8 +182,8 @@ class VAE(TrainableLayer):
             :param x: tensor, input to normalise
             :return: normalised tensor in [0, 255]
             """
-            min_val = tf.reduce_min(x)
-            max_val = tf.reduce_max(x)
+            min_val = tf.reduce_min(input_tensor=x)
+            max_val = tf.reduce_max(input_tensor=x)
             return 255 * (x - min_val) / (max_val - min_val)
 
         def infer_downsampled_shape(x, output_channels, pooling_factors):
@@ -419,8 +419,8 @@ class ConvEncoder(TrainableLayer):
 
         # Add Gaussian noise to the input
         if self.denoising_variance > 0 and is_training:
-            flow = images + tf.random_normal(
-                    tf.shape(images), 0.0, self.denoising_variance)
+            flow = images + tf.random.normal(
+                    tf.shape(input=images), 0.0, self.denoising_variance)
         else:
             flow = images
 
@@ -523,15 +523,15 @@ class GaussianSampler(TrainableLayer):
         posterior_logvars = clip(encoder_logvars(codes, is_training))
 
         if self.number_of_samples == 1:
-            noise_sample = tf.random_normal(tf.shape(posterior_means),
+            noise_sample = tf.random.normal(tf.shape(input=posterior_means),
                                             0.0,
                                             1.0)
         else:
             sample_shape = tf.concat(
                 [tf.constant(self.number_of_samples, shape=[1, ]),
-                 tf.shape(posterior_means)], axis=0)
+                 tf.shape(input=posterior_means)], axis=0)
             noise_sample = tf.reduce_mean(
-                tf.random_normal(sample_shape, 0.0, 1.0), axis=0)
+                input_tensor=tf.random.normal(sample_shape, 0.0, 1.0), axis=0)
 
         return [
             posterior_means + tf.exp(0.5 * posterior_logvars) * noise_sample,

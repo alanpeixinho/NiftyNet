@@ -29,7 +29,7 @@ class Adam(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.AdamOptimizer(
+        opt = tf.compat.v1.train.AdamOptimizer(
             learning_rate=learning_rate,
             beta1=0.9,
             beta2=0.999,
@@ -49,7 +49,7 @@ class Adagrad(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.AdagradOptimizer(
+        opt = tf.compat.v1.train.AdagradOptimizer(
             learning_rate=learning_rate,
             initial_accumulator_value=0.1,
             use_locking=False, name='Adagrad')
@@ -68,7 +68,7 @@ class Momentum(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.MomentumOptimizer(
+        opt = tf.compat.v1.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
             use_locking=False,
@@ -88,7 +88,7 @@ class NesterovMomentum(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.MomentumOptimizer(
+        opt = tf.compat.v1.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
             use_locking=False,
@@ -109,7 +109,7 @@ class RMSProp(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.RMSPropOptimizer(
+        opt = tf.compat.v1.train.RMSPropOptimizer(
             learning_rate=learning_rate,
             decay=0.9,
             momentum=0.0,
@@ -132,7 +132,7 @@ class GradientDescent(object):
         """
         create an instance of the optimiser
         """
-        opt = tf.train.GradientDescentOptimizer(
+        opt = tf.compat.v1.train.GradientDescentOptimizer(
             learning_rate=learning_rate,
             use_locking=False,
             name='GradientDescent')

@@ -11,7 +11,7 @@ try:
 except ImportError:
     import tensorflow as tf
 
-    tf.logging.warning('''
+    tf.compat.v1.logging.warning('''
     niftyreg_image_resampling is not installed; falling back onto
     niftynet.layer.resampler.ResamplerLayer. To install
     niftyreg_image_resampling please see

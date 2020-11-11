@@ -25,7 +25,7 @@ def default_w_initializer():
 
 
 def default_b_initializer():
-    return tf.constant_initializer(0.0)
+    return tf.compat.v1.constant_initializer(0.0)
 
 
 class FCLayer(TrainableLayer):
@@ -64,7 +64,7 @@ class FCLayer(TrainableLayer):
         n_input_chns = input_shape[-1]
 
         # initialize weight matrix and then apply
-        weight_matrix = tf.get_variable(
+        weight_matrix = tf.compat.v1.get_variable(
             'w', shape=[n_input_chns, self.n_output_chns],
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -75,7 +75,7 @@ class FCLayer(TrainableLayer):
             return output_tensor
 
         # adding the bias term
-        bias_term = tf.get_variable(
+        bias_term = tf.compat.v1.get_variable(
             'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])

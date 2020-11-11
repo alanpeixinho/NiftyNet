@@ -27,7 +27,7 @@ def default_w_initializer():
 
 
 def default_b_initializer():
-    return tf.constant_initializer(0.0)
+    return tf.compat.v1.constant_initializer(0.0)
 
 
 class ConvLayer(TrainableLayer):
@@ -88,7 +88,7 @@ class ConvLayer(TrainableLayer):
         full_dilation = layer_util.expand_spatial_params(
             self.dilation, spatial_rank)
 
-        conv_kernel = tf.get_variable(
+        conv_kernel = tf.compat.v1.get_variable(
             'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -108,9 +108,9 @@ class ConvLayer(TrainableLayer):
                                                      name='conv')
             else:
                 conv_output = tf.nn.convolution(input=input_tensor,
-                                                filter=conv_kernel,
+                                                filters=conv_kernel,
                                                 strides=full_stride,
-                                                dilation_rate=full_dilation,
+                                                dilations=full_dilation,
                                                 padding='SAME',
                                                 name='conv')
             output_tensor = conv_output
@@ -128,7 +128,7 @@ class ConvLayer(TrainableLayer):
             return output_tensor
 
         # adding the bias term
-        bias_term = tf.get_variable(
+        bias_term = tf.compat.v1.get_variable(
             'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
@@ -355,32 +355,32 @@ def _extended_convolution(input_tensor,
 
             assert max(e for e, _ in effective_pad) > 0
 
-            padded_input = tf.pad(padded_input,
-                                  effective_pad,
+            padded_input = tf.pad(tensor=padded_input,
+                                  paddings=effective_pad,
                                   mode=padding)
     else:
-        padded_input = tf.pad(input_tensor,
-                              [(d, d) for d in dimpads],
+        padded_input = tf.pad(tensor=input_tensor,
+                              paddings=[(d, d) for d in dimpads],
                               mode=padding,
                               constant_values=constant)
 
     if conv_type == 'SEPARABLE_2D':
         conv_output = tf.nn.separable_conv2d(input=padded_input,
-                                             filter=kernel,
+                                             filters=kernel,
                                              strides=strides,
                                              padding='SAME',
                                              name='conv_' + name)
     elif conv_type == 'DEPTHWISE_2D':
         conv_output = tf.nn.depthwise_conv2d(input=padded_input,
-                                             filter=kernel,
+                                             filters=kernel,
                                              strides=strides,
                                              padding='SAME',
                                              name='conv_' + name)
     else:
         conv_output = tf.nn.convolution(input=padded_input,
-                                        filter=kernel,
+                                        filters=kernel,
                                         strides=strides,
-                                        dilation_rate=dilations,
+                                        dilations=dilations,
                                         padding='SAME',
                                         name='conv_' + name)
 

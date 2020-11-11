@@ -33,11 +33,11 @@ class ResamplerLayer(Layer):
             interpolation.upper(), SUPPORTED_INTERPOLATION)
 
         if self.boundary == 'ZERO' and self.interpolation == 'BSPLINE':
-            tf.logging.fatal('Zero padding is not supported for BSPLINE mode')
+            tf.compat.v1.logging.fatal('Zero padding is not supported for BSPLINE mode')
             raise NotImplementedError
 
         if self.boundary == 'ZERO' and self.interpolation == 'IDW':
-            tf.logging.warning('Zero padding is not supported for IDW mode')
+            tf.compat.v1.logging.warning('Zero padding is not supported for IDW mode')
             # raise NotImplementedError
 
         self.FastResamplerLayer = None  #
@@ -47,7 +47,7 @@ class ResamplerLayer(Layer):
                 from niftyreg_image_resampling import NiftyregImageResamplingLayer
                 import niftyreg_image_resampling as resampler_module
             except ImportError:
-                tf.logging.warning('''
+                tf.compat.v1.logging.warning('''
                     niftyreg_image_resampling is not installed; falling back onto
                     niftynet.layer.resampler.ResamplerLayer. To allow fast resampling,
                     please see installation instructions in
@@ -65,10 +65,10 @@ class ResamplerLayer(Layer):
                 boundary_fast = look_up_operations(self.boundary, SUPPORTED_BOUNDARY_FAST)
                 interp_fast = look_up_operations(self.interpolation, SUPPORTED_INTERPOLATION_FAST)
                 self.FastResamplerLayer = NiftyregImageResamplingLayer(interp_fast, boundary_fast)
-                tf.logging.info('''NiftyReg image resampling is used.''')
+                tf.compat.v1.logging.info('''NiftyReg image resampling is used.''')
             except ValueError as e:
-                tf.logging.warning(e)
-                tf.logging.warning('''Falling back onto niftynet.layer.resampler.ResamplerLayer.''')
+                tf.compat.v1.logging.warning(e)
+                tf.compat.v1.logging.warning('''Falling back onto niftynet.layer.resampler.ResamplerLayer.''')
 
     def layer_op(self, inputs, sample_coords):
         """
@@ -113,12 +113,12 @@ class ResamplerLayer(Layer):
             batch_inputs = int(inputs.shape[0])
             batch_sample_coords = int(sample_coords.shape[0])
         except (TypeError, ValueError):
-            tf.logging.fatal('Unknown input shape, at least batch size '
+            tf.compat.v1.logging.fatal('Unknown input shape, at least batch size '
                              'needs to be specified.')
             raise
 
         if batch_inputs != batch_sample_coords and batch_sample_coords > 1:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 '\nOnly the following two cases are currently supported:\n'
                 '    - batch size of inputs == batch size of sample_coords\n'
                 '    - batch size of sample_coords == 1\n'
@@ -134,21 +134,21 @@ class ResamplerLayer(Layer):
         try:
             coords_n_dim = int(sample_coords.shape[-1])
         except (TypeError, ValueError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'The last dim of the coordinates must have 2 or 3 elements.')
             raise
 
         if infer_spatial_rank(inputs) != coords_n_dim:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'sample_coords.shape[-1] must be the same as the spatial rank '
                 'of the inputs.')
             raise ValueError
 
         # currently converting everything to floats
         if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
-            inputs = tf.to_float(inputs)
+            inputs = tf.cast(inputs, dtype=tf.float32)
         if sample_coords.dtype not in SUPPORTED_INPUT_DTYPE:
-            sample_coords = tf.to_float(sample_coords)
+            sample_coords = tf.cast(sample_coords, dtype=tf.float32)
 
         # use fast resampling layer if available
         if self.FastResamplerLayer is not None:
@@ -162,7 +162,7 @@ class ResamplerLayer(Layer):
             return self._resample_bspline(inputs, sample_coords)
         if self.interpolation == 'IDW':
             return self._resample_inv_dst_weighting(inputs, sample_coords)
-        tf.logging.fatal('interpolation method not implmented')
+        tf.compat.v1.logging.fatal('interpolation method not implmented')
         raise NotImplementedError
 
     def _resample_nearest(self, inputs, sample_coords):
@@ -177,7 +177,7 @@ class ResamplerLayer(Layer):
             batch_size = int(in_size[0])
             n_coords = int(sample_coords.shape[0])
         except (TypeError, AssertionError, ValueError):
-            tf.logging.fatal('Unknown input shape, at least batch size '
+            tf.compat.v1.logging.fatal('Unknown input shape, at least batch size '
                              'and rank of the inputs are required.')
             raise
 
@@ -204,9 +204,9 @@ class ResamplerLayer(Layer):
         if self.boundary == 'ZERO' and in_spatial_size:
             scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1.)
             mask = tf.logical_and(
-                tf.reduce_all(sample_coords > 0, -1, True),
-                tf.reduce_all(scale * sample_coords < 1, -1, True))
-            return output * tf.to_float(mask)
+                tf.reduce_all(input_tensor=sample_coords > 0, axis=-1, keepdims=True),
+                tf.reduce_all(input_tensor=scale * sample_coords < 1, axis=-1, keepdims=True))
+            return output * tf.cast(mask, dtype=tf.float32)
         return output
 
     def _resample_linear(self, inputs, sample_coords):
@@ -229,7 +229,7 @@ class ResamplerLayer(Layer):
             in_spatial_size = \
                 None if partial_shape else in_size.as_list()[1:-1]
         except (TypeError, AssertionError, ValueError):
-            tf.logging.fatal('Unknown input shape, at least batch size '
+            tf.compat.v1.logging.fatal('Unknown input shape, at least batch size '
                              'and rank of the inputs are required.')
             raise
 
@@ -239,7 +239,7 @@ class ResamplerLayer(Layer):
 
         if in_spatial_rank == 2 and self.boundary == 'ZERO':
             # calling TF's resampler
-            inputs = tf.transpose(inputs, [0, 2, 1, 3])
+            inputs = tf.transpose(a=inputs, perm=[0, 2, 1, 3])
             if batch_size == n_coords:
                 return tf.contrib.resampler.resampler(inputs, sample_coords)
             outputs = [
@@ -360,7 +360,7 @@ class ResamplerLayer(Layer):
         batch_coords = tf.tile(batch_coords, [1] + knot_size[1:-1] + [1])
         raw_samples = tf.gather_nd(
             inputs, tf.concat([batch_coords, spatial_coords], -1))
-        return tf.reduce_sum(all_weights * raw_samples, reduction_indices=1)
+        return tf.reduce_sum(input_tensor=all_weights * raw_samples, axis=1)
 
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
         # inverse distance weighting using 2^(sptial_rank) neighbours
@@ -373,7 +373,7 @@ class ResamplerLayer(Layer):
             in_spatial_size = \
                 None if partial_shape else in_size.as_list()[1:-1]
         except (TypeError, AssertionError, ValueError):
-            tf.logging.fatal('Unknown input shape, at least batch size '
+            tf.compat.v1.logging.fatal('Unknown input shape, at least batch size '
                              'and rank of the inputs are required.')
             raise
 
@@ -382,11 +382,11 @@ class ResamplerLayer(Layer):
         weight_id = [[[c, i] for i, c in enumerate(bc)]
                      for bc in binary_neighbour_ids]
         sample_coords_shape = [out_rank - 1, 0] + list(range(1, out_rank - 1))
-        sample_coords = tf.transpose(sample_coords, sample_coords_shape)
+        sample_coords = tf.transpose(a=sample_coords, perm=sample_coords_shape)
 
         if partial_shape or in_spatial_size is None:
             all_coords_f = tf.stack(
-                [tf.floor(sample_coords), tf.ceil(sample_coords)])
+                [tf.floor(sample_coords), tf.math.ceil(sample_coords)])
         else:
             # broadcasting input spatial size for boundary functions
             expanded_spatial_size = \
@@ -395,12 +395,12 @@ class ResamplerLayer(Layer):
             # find floor and ceil coordinates
             all_coords_f = tf.stack([
                 self.boundary_func(tf.floor(sample_coords), b_size),
-                self.boundary_func(tf.ceil(sample_coords), b_size)])
+                self.boundary_func(tf.math.ceil(sample_coords), b_size)])
 
         # find N weights associated to each output point
         diff = tf.stack(
-            [tf.squared_difference(sample_coords - EPS, all_coords_f[0]),
-             tf.squared_difference(sample_coords + EPS, all_coords_f[1])])
+            [tf.math.squared_difference(sample_coords - EPS, all_coords_f[0]),
+             tf.math.squared_difference(sample_coords + EPS, all_coords_f[1])])
 
         # gather_nd for both matrices, the same as:
         # point_weights = tf.gather_nd(diff, weight_id)
@@ -422,18 +422,18 @@ class ResamplerLayer(Layer):
         # `point_weights` represents (p - p_i)^2
         #      with i= 0...2**source_rank neighbours
         # (to do: these operations could be refactored as a resampling kernel)
-        point_weights = tf.reduce_sum(point_weights, axis=1)
+        point_weights = tf.reduce_sum(input_tensor=point_weights, axis=1)
         # skip this as power = 2.0:
         # self.power = 2.0
         # point_weights = tf.pow(point_weights, self.power / 2.0)
-        point_weights = tf.reciprocal(point_weights)
-        point_weights = point_weights / tf.reduce_sum(point_weights, axis=0)
+        point_weights = tf.math.reciprocal(point_weights)
+        point_weights = point_weights / tf.reduce_sum(input_tensor=point_weights, axis=0)
 
         # find N neighbours associated to each output point
         # knots_shape = tf.concat([[0], tf.range(2, out_rank + 1), [1]], 0)
         knots_shape = [0] + list(range(2, out_rank + 1)) + [1]
         knots_id = tf.cast(knots_id, COORDINATES_TYPE)
-        knots_id = tf.transpose(knots_id, knots_shape)
+        knots_id = tf.transpose(a=knots_id, perm=knots_shape)
 
         # get values of N neighbours
         batch_inputs = tf.unstack(inputs, axis=0)
@@ -449,7 +449,7 @@ class ResamplerLayer(Layer):
         samples = tf.stack(samples, axis=1)
         # weighted average over N neighbours
         return tf.reduce_sum(
-            samples * tf.expand_dims(point_weights, axis=-1), axis=0)
+            input_tensor=samples * tf.expand_dims(point_weights, axis=-1), axis=0)
 
 
 def _boundary_replicate(sample_coords, input_size):
@@ -459,7 +459,7 @@ def _boundary_replicate(sample_coords, input_size):
 
 def _boundary_circular(sample_coords, input_size):
     sample_coords, input_size = _param_type_and_shape(sample_coords, input_size)
-    return tf.mod(tf.mod(sample_coords, input_size) + input_size, input_size)
+    return tf.math.floormod(tf.math.floormod(sample_coords, input_size) + input_size, input_size)
 
 
 def _boundary_symmetric(sample_coords, input_size):

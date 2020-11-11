@@ -39,7 +39,7 @@ class RegressionApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting regression application')
+        tf.compat.v1.logging.info('starting regression application')
         self.action = action
 
         self.net_param = net_param
@@ -77,7 +77,7 @@ class RegressionApplication(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'output', 'inferred')
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -246,13 +246,13 @@ class RegressionApplication(BaseApplication):
         reg_type = self.net_param.reg_type.lower()
         decay = self.net_param.decay
         if reg_type == 'l2' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l2_regularizer(decay)
-            b_regularizer = regularizers.l2_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L2(decay)
+            b_regularizer = regularizers.L2(decay)
         elif reg_type == 'l1' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l1_regularizer(decay)
-            b_regularizer = regularizers.l1_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L1(decay)
+            b_regularizer = regularizers.L1(decay)
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=1,
@@ -269,7 +269,7 @@ class RegressionApplication(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
@@ -277,9 +277,9 @@ class RegressionApplication(BaseApplication):
             self.patience = self.action_param.patience
             self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -290,8 +290,7 @@ class RegressionApplication(BaseApplication):
 
             gt = data_dict['output']
             #net_out = tf.Print(net_out, [tf.math.reduce_mean(net_out), tf.math.reduce_std(net_out), tf.math.reduce_mean(gt), tf.math.reduce_std(gt)], 'Net Output: ')
-
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -300,7 +299,7 @@ class RegressionApplication(BaseApplication):
 
             weight_map = data_dict.get('weight', None)
             border=self.regression_param.loss_border
-            if border == None or tf.reduce_sum(tf.abs(border)) == 0:
+            if border == None or tf.reduce_sum(input_tensor=tf.abs(border)) == 0:
                 data_loss = loss_func(
                         prediction=net_out,
                         ground_truth=data_dict['output'],
@@ -312,16 +311,16 @@ class RegressionApplication(BaseApplication):
                         prediction=crop_layer(net_out),
                         ground_truth=crop_layer(data_dict['output']),
                         weight_map=weight_map)
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
 
             # Get all vars
-            to_optimise = tf.trainable_variables()
+            to_optimise = tf.compat.v1.trainable_variables()
             vars_to_freeze = \
                 self.action_param.vars_to_freeze or \
                 self.action_param.vars_to_restore
@@ -331,17 +330,17 @@ class RegressionApplication(BaseApplication):
                 # Only optimise vars that are not frozen
                 to_optimise = \
                     [v for v in to_optimise if not var_regex.search(v.name)]
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     "Optimizing %d out of %d trainable variables, "
                     "the other variables are fixed (--vars_to_freeze %s)",
                     len(to_optimise),
-                    len(tf.trainable_variables()),
+                    len(tf.compat.v1.trainable_variables()),
                     vars_to_freeze)
 
             self.total_loss = loss
 
             grads = self.optimiser.compute_gradients(
-                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.engine.application_initializer import GlorotUniform
 from niftynet.layer.convolution import ConvolutionalLayer as Conv
@@ -87,26 +87,26 @@ class INetDense(BaseNet):
 
         self.down_res_param = {
             'w_initializer': GlorotUniform.get_instance(''),
-            'w_regularizer': regularizers.l2_regularizer(decay),
+            'w_regularizer': regularizers.L2(decay),
             'acti_func': acti_func}
 
         self.up_res_param = {
             'acti_func': acti_func,
             'w_initializer': GlorotUniform.get_instance(''),
-            'w_regularizer': regularizers.l2_regularizer(decay),
+            'w_regularizer': regularizers.L2(decay),
             'is_residual_upsampling': True,
             'type_string': 'bn_acti_conv'}
 
         # displacement initialiser & regulariser
         if disp_w_initializer is None:
-            disp_b_initializer = tf.constant_initializer(0.0)
+            disp_b_initializer = tf.compat.v1.constant_initializer(0.0)
             #disp_w_initializer = tf.random_normal_initializer(0, 1e-4)
         if disp_b_initializer is None:
-            disp_b_initializer = tf.constant_initializer(0.0)
+            disp_b_initializer = tf.compat.v1.constant_initializer(0.0)
             #disp_w_initializer = tf.random_normal_initializer(0, 0.0)
         self.disp_param = {
             'w_initializer': disp_w_initializer,
-            'w_regularizer': regularizers.l2_regularizer(decay),
+            'w_regularizer': regularizers.L2(decay),
             'b_initializer': disp_b_initializer,
             'b_regularizer': None}
 
@@ -187,7 +187,7 @@ class INetDense(BaseNet):
             base_grid = tf.constant(base_grid, dtype=resized_field.dtype)
 
         if self.multi_scale_fusion and len(dense_fields) > 1:
-            dense_field = tf.reduce_sum(dense_fields, axis=0)
+            dense_field = tf.reduce_sum(input_tensor=dense_fields, axis=0)
         else:
             dense_field = dense_fields[0]
 
@@ -195,9 +195,9 @@ class INetDense(BaseNet):
         if self.smoothing_func is not None:
             dense_field = self.smoothing_func(dense_field, spatial_rank)
 
-        tf.add_to_collection('bending_energy',
+        tf.compat.v1.add_to_collection('bending_energy',
                              _computing_bending_energy(dense_field))
-        tf.add_to_collection('gradient_norm',
+        tf.compat.v1.add_to_collection('gradient_norm',
                              _computing_gradient_norm(dense_field))
 
         dense_field = dense_field + base_grid
@@ -239,7 +239,7 @@ def _smoothing_func(sigma):
         kernel = tf.expand_dims(kernel, axis=-1)
         kernel = tf.expand_dims(kernel, axis=-1)
         smoothed = [
-            tf.nn.convolution(tf.expand_dims(coord, axis=-1), kernel, 'SAME')
+            tf.nn.convolution(input=tf.expand_dims(coord, axis=-1), filters=kernel, padding='SAME')
             for coord in tf.unstack(dense_field, axis=-1)]
         return tf.concat(smoothed, axis=-1)
 
@@ -274,7 +274,7 @@ def _computing_bending_energy_2d(displacement):
     dTdyy = ImgGrad(spatial_axis=1)(dTdy)
     dTdxy = ImgGrad(spatial_axis=1)(dTdx)
 
-    energy = tf.reduce_mean([dTdxx * dTdxx, dTdyy * dTdyy, 2 * dTdxy * dTdxy])
+    energy = tf.reduce_mean(input_tensor=[dTdxx * dTdxx, dTdyy * dTdyy, 2 * dTdxy * dTdxy])
     return energy
 
 
@@ -297,7 +297,7 @@ def _computing_bending_energy_3d(displacement):
     dTdxz = ImgGrad(spatial_axis=2)(dTdx)
 
     energy = tf.reduce_mean(
-        [dTdxx * dTdxx, dTdyy * dTdyy, dTdzz * dTdzz,
+        input_tensor=[dTdxx * dTdxx, dTdyy * dTdyy, dTdzz * dTdzz,
          2 * dTdxy * dTdxy, 2 * dTdxz * dTdxz, 2 * dTdyz * dTdyz])
     return energy
 
@@ -316,4 +316,4 @@ def _computing_gradient_norm(displacement, flag_L1=False):
             norms.append(tf.abs(dTdt))
         else:
             norms.append(dTdt * dTdt)
-    return tf.reduce_mean(norms)
+    return tf.reduce_mean(input_tensor=norms)

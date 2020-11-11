@@ -44,7 +44,7 @@ class DownSampleLayer(Layer):
             output_tensor = [
                 tf.nn.convolution(
                     input=inputs,
-                    filter=kernel,
+                    filters=kernel,
                     strides=stride_all_dims,
                     padding=self.padding,
                     name='conv')
@@ -56,7 +56,7 @@ class DownSampleLayer(Layer):
                 window_shape=kernel_size_all_dims,
                 pooling_type=self.func,
                 padding=self.padding,
-                dilation_rate=[1] * spatial_rank,
+                dilations=[1] * spatial_rank,
                 strides=stride_all_dims,
                 name=self.layer_name)
         return output_tensor

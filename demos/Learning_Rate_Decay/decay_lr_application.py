@@ -16,7 +16,7 @@ class DecayLearningRateApplication(SegmentationApplication):
     def __init__(self, net_param, action_param, is_training):
         SegmentationApplication.__init__(
             self, net_param, action_param, is_training)
-        tf.logging.info('starting decay learning segmentation application')
+        tf.compat.v1.logging.info('starting decay learning segmentation application')
         self.learning_rate = None
         self.current_lr = action_param.lr
         if self.action_param.validation_every_n > 0:
@@ -31,8 +31,8 @@ class DecayLearningRateApplication(SegmentationApplication):
         net_out = self.net(image, self.is_training)
 
         if self.is_training:
-            with tf.name_scope('Optimiser'):
-                self.learning_rate = tf.placeholder(tf.float32, shape=[])
+            with tf.compat.v1.name_scope('Optimiser'):
+                self.learning_rate = tf.compat.v1.placeholder(tf.float32, shape=[])
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -46,11 +46,11 @@ class DecayLearningRateApplication(SegmentationApplication):
                 weight_map=data_dict.get('weight', None))
 
             loss = data_loss
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
 
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             grads = self.optimiser.compute_gradients(loss)
             # collecting gradients variables

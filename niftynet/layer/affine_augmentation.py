@@ -57,7 +57,7 @@ class AffineAugmentationLayer(Layer):
 
         # make randomised output corners
         random_size = [batch_size, 2 ** spatial_rank, spatial_rank]
-        random_scale = tf.random_uniform(random_size, 1. - self.scale, 1.0)
+        random_scale = tf.random.uniform(random_size, 1. - self.scale, 1.0)
         source_corners = output_corners * random_scale
 
         # make homogeneous corners
@@ -65,8 +65,8 @@ class AffineAugmentationLayer(Layer):
         source_corners = tf.concat([source_corners, batch_ones], -1)
         output_corners = tf.concat([output_corners, batch_ones], -1)
 
-        ls_transform = tf.matrix_solve_ls(output_corners, source_corners)
-        return tf.transpose(ls_transform, [0, 2, 1])
+        ls_transform = tf.linalg.lstsq(output_corners, source_corners)
+        return tf.transpose(a=ls_transform, perm=[0, 2, 1])
 
     def layer_op(self, input_tensor):
         input_shape = input_tensor.shape.as_list()
@@ -112,7 +112,7 @@ class AffineAugmentationLayer(Layer):
             self.scale,
             interpolation,
             boundary,
-            tf.matrix_inverse(self._transform),
+            tf.linalg.inv(self._transform),
             name)
         return inverse_layer
 

@@ -108,9 +108,9 @@ class ResamplerTest(tft.TestCase):
 
             for inter in (0, 1, 3):
                 with self.session(use_gpu=use_gpu) as sess:
-                    img = tf.placeholder(tf.float32,
+                    img = tf.compat.v1.placeholder(tf.float32,
                                          shape=image_batch_shape)
-                    disp = tf.placeholder(tf.float32,
+                    disp = tf.compat.v1.placeholder(tf.float32,
                                           shape=disp_batch_shape)
 
                     warped = res.niftyreg_image_resampling(img, disp,

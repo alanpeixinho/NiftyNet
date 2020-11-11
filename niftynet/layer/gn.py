@@ -26,8 +26,8 @@ class GNLayer(TrainableLayer):
         self.group_size = group_size
         self.eps = eps
         self.initializers = {
-            'beta': tf.constant_initializer(0.0),
-            'gamma': tf.constant_initializer(1.0)}
+            'beta': tf.compat.v1.constant_initializer(0.0),
+            'gamma': tf.compat.v1.constant_initializer(1.0)}
         self.regularizers = {'beta': regularizer, 'gamma': regularizer}
 
     def layer_op(self, inputs):
@@ -48,13 +48,13 @@ class GNLayer(TrainableLayer):
         param_shape = [1] * (input_shape.ndims - 1) + [input_shape[-1]]
 
         # create trainable variables
-        beta = tf.get_variable(
+        beta = tf.compat.v1.get_variable(
             'beta',
             shape=param_shape,
             initializer=self.initializers['beta'],
             regularizer=self.regularizers['beta'],
             dtype=tf.float32, trainable=True)
-        gamma = tf.get_variable(
+        gamma = tf.compat.v1.get_variable(
             'gamma',
             shape=param_shape,
             initializer=self.initializers['gamma'],
@@ -62,7 +62,7 @@ class GNLayer(TrainableLayer):
             dtype=tf.float32, trainable=True)
 
         # mean and var
-        mean, variance = tf.nn.moments(grouped_inputs, axes, keep_dims=True)
+        mean, variance = tf.nn.moments(x=grouped_inputs, axes=axes, keepdims=True)
 
         outputs = (grouped_inputs - mean) / tf.sqrt(variance + self.eps)
         outputs = tf.reshape(outputs, input_shape) * gamma + beta

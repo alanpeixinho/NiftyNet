@@ -14,7 +14,7 @@ class ToyNetTest(NiftyNetTestCase):
         out = toynet_instance(x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 160), out.shape)
 
@@ -26,7 +26,7 @@ class ToyNetTest(NiftyNetTestCase):
         out = toynet_instance(x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)
 

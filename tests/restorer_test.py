@@ -14,12 +14,12 @@ from tests.niftynet_testcase import NiftyNetTestCase
 class RestorerTest(NiftyNetTestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         [tf.Variable(definition[k], name=k, dtype=np.float32)
             for k in definition]
-        with tf.Session() as sess:
-            saver = tf.train.Saver()
-            sess.run(tf.global_variables_initializer())
+        with tf.compat.v1.Session() as sess:
+            saver = tf.compat.v1.train.Saver()
+            sess.run(tf.compat.v1.global_variables_initializer())
             fn = os.path.join('testing_data', checkpoint_name)
             saver.save(sess, fn)
         return fn
@@ -30,13 +30,13 @@ class RestorerTest(NiftyNetTestCase):
             'foo3/conv_/w': np.random.randn(3, 3, 1, 3),
             'bar/bing/boffin': [2]}
         checkpoint_name = self.make_checkpoint('chk1', definition)
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         block1 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo')
         b1 = block1(tf.ones([1., 5., 5., 1.]))
-        tf.add_to_collection(RESTORABLE,
+        tf.compat.v1.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
         block2 = ConvolutionalLayer(4, 3, name='bar', feature_normalization=None,
-                                    w_initializer=tf.constant_initializer(1.))
+                                    w_initializer=tf.compat.v1.constant_initializer(1.))
         b2 = block2(tf.ones([1., 5., 5., 1.]))
         block3 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo2')
         block3.restore_from_checkpoint(checkpoint_name, 'bar2')
@@ -44,10 +44,10 @@ class RestorerTest(NiftyNetTestCase):
         block4 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo3')
         block4.restore_from_checkpoint(checkpoint_name)
         b4 = block4(tf.ones([1., 5., 5., 1.]))
-        tf.add_to_collection(RESTORABLE,
+        tf.compat.v1.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
         init_op = global_vars_init_or_restore()
-        all_vars = tf.global_variables()
+        all_vars = tf.compat.v1.global_variables()
         with self.cached_session() as sess:
             sess.run(init_op)
 
@@ -66,12 +66,12 @@ class RestorerTest(NiftyNetTestCase):
             self.assertAllClose(foo3_w, definition['foo3/conv_/w'])
 
     def test_no_restores(self):
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         block1 = ConvolutionalLayer(4, 3, name='bar', feature_normalization=None,
-                                    w_initializer=tf.constant_initializer(1.))
+                                    w_initializer=tf.compat.v1.constant_initializer(1.))
         b2 = block1(tf.ones([1., 5., 5., 1.]))
         init_op = global_vars_init_or_restore()
-        all_vars = tf.global_variables()
+        all_vars = tf.compat.v1.global_variables()
         with self.cached_session() as sess:
             sess.run(init_op)
 

@@ -51,7 +51,7 @@ def infer_ndims_from_file(file_path, loader=None):
     except (TypeError, AttributeError):
         pass
 
-    tf.logging.fatal('unsupported file header in: {}'.format(file_path))
+    tf.compat.v1.logging.fatal('unsupported file header in: {}'.format(file_path))
     raise IOError('could not get ndims from file header, please '
                   'consider convert image files to NifTI format.')
 
@@ -186,13 +186,13 @@ def compute_orientation(init_axcodes, final_axcodes):
     ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
     ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
     if np.any(np.isnan(ornt_init)) or np.any(np.isnan(ornt_fin)):
-        tf.logging.fatal("unknown axcodes %s, %s", ornt_init, ornt_fin)
+        tf.compat.v1.logging.fatal("unknown axcodes %s, %s", ornt_init, ornt_fin)
         raise ValueError
     try:
         ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
         return ornt_transf, ornt_init, ornt_fin
     except (ValueError, IndexError):
-        tf.logging.fatal('reorientation transform error: %s, %s', ornt_init,
+        tf.compat.v1.logging.fatal('reorientation transform error: %s, %s', ornt_init,
                          ornt_fin)
         raise ValueError
 
@@ -267,7 +267,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     try:
         return nib.orientations.apply_orientation(data_array, ornt_transf)
     except (ValueError, IndexError):
-        tf.logging.fatal('reorientation undecided %s, %s', ornt_init, ornt_fin)
+        tf.compat.v1.logging.fatal('reorientation undecided %s, %s', ornt_init, ornt_fin)
         raise ValueError
 
 
@@ -291,7 +291,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     try:
         assert len(pixdim_init) <= len(pixdim_fin)
     except (TypeError, AssertionError):
-        tf.logging.fatal("unknown pixdim format original %s output %s",
+        tf.compat.v1.logging.fatal("unknown pixdim format original %s output %s",
                          pixdim_init, pixdim_fin)
         raise
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
@@ -328,13 +328,13 @@ def save_csv_array(filefolder, filename, array_to_save):
     output_name = os.path.join(filefolder, filename)
     try:
         if os.path.isfile(output_name):
-            tf.logging.warning('File %s exists, overwriting the file.',
+            tf.compat.v1.logging.warning('File %s exists, overwriting the file.',
                                output_name)
         array_to_save.to_csv(output_name)
     except OSError:
-        tf.logging.fatal("writing failed {}".format(output_name))
+        tf.compat.v1.logging.fatal("writing failed {}".format(output_name))
         raise
-    tf.logging.info('Saved {}'.format(output_name))
+    tf.compat.v1.logging.info('Saved {}'.format(output_name))
 
 
 def save_data_array(filefolder,
@@ -454,13 +454,13 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     output_name = os.path.join(save_path, filename)
     try:
         if os.path.isfile(output_name):
-            tf.logging.warning('File %s exists, overwriting the file.',
+            tf.compat.v1.logging.warning('File %s exists, overwriting the file.',
                                output_name)
         nib.save(img_nii, output_name)
     except OSError:
-        tf.logging.fatal("writing failed {}".format(output_name))
+        tf.compat.v1.logging.fatal("writing failed {}".format(output_name))
         raise
-    tf.logging.info('Saved {}'.format(output_name))
+    tf.compat.v1.logging.info('Saved {}'.format(output_name))
 
 
 def split_filename(file_name):
@@ -502,7 +502,7 @@ def squeeze_spatial_temporal_dim(tf_tensor):
         if tf_tensor.shape[5] > 1:
             raise NotImplementedError("time sequences not currently supported")
         # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
-        tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
+        tf_tensor = tf.transpose(a=tf_tensor, perm=[0, 1, 2, 3, 5, 4])
     axis_to_squeeze = []
     for (idx, axis) in enumerate(tf_tensor.shape.as_list()):
         if idx in (0, 5):
@@ -522,7 +522,7 @@ def touch_folder(model_dir):
         try:
             os.makedirs(model_dir)
         except (OSError, TypeError):
-            tf.logging.fatal('could not create model folder: %s', model_dir)
+            tf.compat.v1.logging.fatal('could not create model folder: %s', model_dir)
             raise
     absolute_dir = os.path.abspath(model_dir)
     # tf.logging.info('accessing output folder: {}'.format(absolute_dir))
@@ -589,7 +589,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
             if sys_error.errno == errno.EEXIST:
                 pass
             else:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     "trying to use '{}' as NiftyNet writing path, "
                     "however cannot write '{}'".format(folder_path, init_file))
                 raise
@@ -641,7 +641,7 @@ def resolve_file_name(file_name, paths):
         for path in paths:
             path_file_name = os.path.join(path, file_name)
             if os.path.isfile(path_file_name):
-                tf.logging.info('Resolving {} as {}'.format(
+                tf.compat.v1.logging.info('Resolving {} as {}'.format(
                     file_name, path_file_name))
                 return os.path.abspath(path_file_name)
         raise IOError('Could not resolve file name')
@@ -686,7 +686,7 @@ def get_latest_subfolder(parent_folder, create_new=False):
     try:
         log_sub_dirs = os.listdir(parent_folder)
     except OSError:
-        tf.logging.fatal('not a directory {}'.format(parent_folder))
+        tf.compat.v1.logging.fatal('not a directory {}'.format(parent_folder))
         raise OSError
     log_sub_dirs = [
         name for name in log_sub_dirs if re.findall('^[0-9]+$', name)
@@ -738,7 +738,7 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_out=3,
-           collections=(tf.GraphKeys.SUMMARIES, ),
+           collections=(tf.compat.v1.GraphKeys.SUMMARIES, ),
            animation_axes=(1, ),
            image_axes=(2, 3),
            other_indices=None):
@@ -780,7 +780,7 @@ def image3(name,
         original_shape[0], -1, original_shape[axis_order[-2]],
         original_shape[axis_order[-1]]
     ]
-    transposed_tensor = tf.transpose(tensor, axis_order_all)
+    transposed_tensor = tf.transpose(a=tensor, perm=axis_order_all)
     transposed_tensor = tf.reshape(transposed_tensor, new_shape)
     # split images
     with tf.device('/cpu:0'):
@@ -789,16 +789,16 @@ def image3(name,
                 name + suffix.format(it_i), transposed_tensor[it_i, ...]
             ]
             #print('inp: ', inp)
-            summary_op = tf.py_func(_image3_animated_gif, inp, tf.string)
+            summary_op = tf.compat.v1.py_func(_image3_animated_gif, inp, tf.string)
             for c in collections:
-                tf.add_to_collection(c, summary_op)
+                tf.compat.v1.add_to_collection(c, summary_op)
     return summary_op
 
 
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=(tf.GraphKeys.SUMMARIES, )):
+                    collections=(tf.compat.v1.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the sagittal view.
 
@@ -814,7 +814,7 @@ def image3_sagittal(name,
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=(tf.GraphKeys.SUMMARIES, )):
+                   collections=(tf.compat.v1.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the coronal view.
 
@@ -830,7 +830,7 @@ def image3_coronal(name,
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=(tf.GraphKeys.SUMMARIES, )):
+                 collections=(tf.compat.v1.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the axial view.
 
@@ -864,7 +864,7 @@ def set_logger(file_name=None):
         from tensorflow.python.platform.tf_logging import get_logger
 
     logger = get_logger()
-    tf.logging.set_verbosity(tf.logging.INFO)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     logger.handlers = []
 
     # adding console output
@@ -924,11 +924,11 @@ def infer_latest_model_file(model_dir):
         assert checkpoint, 'checkpoint path not found ' \
                            'in {}/checkpoint'.format(model_dir)
         initial_iter = int(checkpoint.rsplit('-')[-1])
-        tf.logging.info('set initial_iter to %d based '
+        tf.compat.v1.logging.info('set initial_iter to %d based '
                         'on checkpoints', initial_iter)
         return initial_iter
     except (ValueError, AttributeError, AssertionError):
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             'Failed to get iteration number '
             'from checkpoint path (%s),\n'
             'please check config parameter: '

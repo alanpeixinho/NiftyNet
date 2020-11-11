@@ -49,7 +49,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             smaller_final_batch_mode='drop',
             name=name)
 
-        tf.logging.info("initialised csv patch sampler %s ", self.window.shapes)
+        tf.compat.v1.logging.info("initialised csv patch sampler %s ", self.window.shapes)
         self.mode_correction = mode_correction
         self.window_centers_sampler = rand_spatial_coordinates
         self.available_subjects = reader._file_list.subject_id
@@ -77,7 +77,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         # flag_multi_row = False
         print("Trying to run csv patch sampler ")
         if 'sampler' not in self.csv_reader.names:
-            tf.logging.warning('Uniform sampling because no csv sampler '
+            tf.compat.v1.logging.warning('Uniform sampling because no csv sampler '
                                'provided')
 
         # if 'multi' in self.csv_reader.type_by_task.values():
@@ -85,7 +85,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         try:
             _, _, subject_id = self.csv_reader(idx)
         except ValueError:
-            tf.logging.fatal("No available subject")
+            tf.compat.v1.logging.fatal("No available subject")
             raise
 
         assert len(self.available_subjects) >0, "No available subject from " \
@@ -116,7 +116,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
 
 
             if 'sampler' not in self.csv_reader.names:
-                tf.logging.warning('Uniform sampling because no csv sampler '
+                tf.compat.v1.logging.warning('Uniform sampling because no csv sampler '
                                   'provided')
 
 
@@ -134,7 +134,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
 
                         subject_id = None
                     else:
-                        tf.logging.warning('%s may have already been dropped from list of available subjects' %subject_id)
+                        tf.compat.v1.logging.warning('%s may have already been dropped from list of available subjects' %subject_id)
                         subject_id = None
                     while subject_id is None and len(self.available_subjects) > 0:
                         _, _, subject_id = self.csv_reader(idx)
@@ -151,7 +151,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                             subj_indices, csv_data, _ = self.csv_reader(
                                 subject_id=subject_id)
                             if 'sampler' not in self.csv_reader.names:
-                                tf.logging.warning(
+                                tf.compat.v1.logging.warning(
                                     'Uniform sampling because no csv sampler provided')
                             image_shapes = dict(
                                 (name, data[name].shape) for name in self.window.names)
@@ -170,7 +170,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                         else:
                             subject_id = None
                 if subject_id is None:
-                    tf.logging.fatal("None of the subjects has any suitable "
+                    tf.compat.v1.logging.fatal("None of the subjects has any suitable "
                                      "samples. Consider using a different "
                                      "alternative to unsuitable samples or "
                                      "reducing your patch size")
@@ -236,7 +236,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                             else:
                                 image_array.append(image_window[np.newaxis, ...])
                         except ValueError:
-                            tf.logging.fatal(
+                            tf.compat.v1.logging.fatal(
                                 "dimensionality miss match in input volumes, "
                                 "please specify spatial_window_size with a "
                                 "3D tuple and make sure each element is "
@@ -280,10 +280,10 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                 # [enqueue_batch_size, x, y, z, time, modality]
                 # where enqueue_batch_size = windows_per_image
             except ValueError:
-                tf.logging.fatal("Cannot provide output for %s" %subject_id)
+                tf.compat.v1.logging.fatal("Cannot provide output for %s" %subject_id)
                 raise
         else:
-            tf.logging.fatal("%s not in available list of subjects" %subject_id)
+            tf.compat.v1.logging.fatal("%s not in available list of subjects" %subject_id)
             raise ValueError
 
     def csvcenter_spatial_coordinates(self,
@@ -371,7 +371,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             if np.sum(self.csv_reader.valid_by_task['sampler'][idx_multi]) ==\
                     0 and np.asarray(window_centres).shape[0] == 0 and \
                     mode_correction == 'rand':
-                tf.logging.warning("Nothing is valid, taking random centres")
+                tf.compat.v1.logging.warning("Nothing is valid, taking random centres")
                 window_centres = rand_spatial_coordinates(n_samples,
                                                           img_spatial_size,
                                                           win_spatial_size,
@@ -495,7 +495,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
 
             img_spatial_size, win_spatial_size = _infer_spatial_size(
                 img_sizes, win_sizes)
-            tf.logging.warning("Need to checked validity of samples for "
+            tf.compat.v1.logging.warning("Need to checked validity of samples for "
                                "subject %s" %subject_id)
             checked = np.ones([numb])
             pad = np.zeros([numb, 2*N_SPATIAL])
@@ -537,7 +537,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                 pad[:, N_SPATIAL:] = np.maximum(diff_spatial_size,
                                                 pad[:, N_SPATIAL:])
 
-                tf.logging.warning("to discard or pad is %d out of %d for mod "
+                tf.compat.v1.logging.warning("to discard or pad is %d out of %d for mod "
                                    "%s" % (numb-np.sum(checked), numb, mod))
 
             idx_discarded = []
@@ -552,7 +552,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             #     'sampler'])] = checked
             print('Updated check')
             if np.sum(checked) < numb:
-                tf.logging.warning("The following indices are not valid for "
+                tf.compat.v1.logging.warning("The following indices are not valid for "
                                    "%s %s " %(subject_id, ' '.join(map(str,
                                               idx_discarded))))
             print(
@@ -619,7 +619,7 @@ def rand_spatial_coordinates(
     :return: (n_samples, N_SPATIAL) coordinates representing sampling
               window centres relative to img_spatial_size
     """
-    tf.logging.debug('uniform sampler, prior %s ignored', sampler_map)
+    tf.compat.v1.logging.debug('uniform sampler, prior %s ignored', sampler_map)
 
     # Sample coordinates at random
     half_win = np.floor(np.asarray(win_spatial_size) / 2.0).astype(np.int32)
@@ -648,7 +648,7 @@ def _infer_spatial_size(img_sizes, win_sizes):
     uniq_spatial_size = \
         set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) != 1:
-        tf.logging.fatal("Don't know how to generate sampling "
+        tf.compat.v1.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
                          "consistent. %s", uniq_spatial_size)

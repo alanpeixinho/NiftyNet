@@ -6,7 +6,7 @@ from tensorflow.python.training import moving_averages
 
 from niftynet.layer.base_layer import TrainableLayer
 
-BN_COLLECTION = tf.GraphKeys.UPDATE_OPS
+BN_COLLECTION = tf.compat.v1.GraphKeys.UPDATE_OPS
 
 
 class BNLayer(TrainableLayer):
@@ -26,10 +26,10 @@ class BNLayer(TrainableLayer):
         self.eps = eps
         self.moving_decay = moving_decay
 
-        self.initializers = {'beta': tf.constant_initializer(0.0),
-                             'gamma': tf.constant_initializer(1.0),
-                             'moving_mean': tf.constant_initializer(0.0),
-                             'moving_variance': tf.constant_initializer(1.0)}
+        self.initializers = {'beta': tf.compat.v1.constant_initializer(0.0),
+                             'gamma': tf.compat.v1.constant_initializer(1.0),
+                             'moving_mean': tf.compat.v1.constant_initializer(0.0),
+                             'moving_variance': tf.compat.v1.constant_initializer(1.0)}
 
         self.regularizers = {'beta': regularizer, 'gamma': regularizer}
 
@@ -41,39 +41,39 @@ class BNLayer(TrainableLayer):
         axes = list(range(input_shape.ndims - 1))
 
         # create trainable variables and moving average variables
-        beta = tf.get_variable(
+        beta = tf.compat.v1.get_variable(
             'beta',
             shape=params_shape,
             initializer=self.initializers['beta'],
             regularizer=self.regularizers['beta'],
             dtype=tf.float32, trainable=True)
-        gamma = tf.get_variable(
+        gamma = tf.compat.v1.get_variable(
             'gamma',
             shape=params_shape,
             initializer=self.initializers['gamma'],
             regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
 
-        collections = [tf.GraphKeys.GLOBAL_VARIABLES]
-        moving_mean = tf.get_variable(
+        collections = [tf.compat.v1.GraphKeys.GLOBAL_VARIABLES]
+        moving_mean = tf.compat.v1.get_variable(
             'moving_mean',
             shape=params_shape,
             initializer=self.initializers['moving_mean'],
             dtype=tf.float32, trainable=False, collections=collections)
-        moving_variance = tf.get_variable(
+        moving_variance = tf.compat.v1.get_variable(
             'moving_variance',
             shape=params_shape,
             initializer=self.initializers['moving_variance'],
             dtype=tf.float32, trainable=False, collections=collections)
 
         # mean and var
-        mean, variance = tf.nn.moments(inputs, axes)
+        mean, variance = tf.nn.moments(x=inputs, axes=axes)
         update_moving_mean = moving_averages.assign_moving_average(
             moving_mean, mean, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
-        tf.add_to_collection(BN_COLLECTION, update_moving_mean)
-        tf.add_to_collection(BN_COLLECTION, update_moving_variance)
+        tf.compat.v1.add_to_collection(BN_COLLECTION, update_moving_mean)
+        tf.compat.v1.add_to_collection(BN_COLLECTION, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:
@@ -124,7 +124,7 @@ class InstanceNormLayer(TrainableLayer):
 
     def layer_op(self, inputs):
         if self.gamma_initializer is None:
-            self.gamma_initializer = tf.constant_initializer(1.0)
+            self.gamma_initializer = tf.compat.v1.constant_initializer(1.0)
         return tf.contrib.layers.instance_norm(
             inputs,
             center=True,

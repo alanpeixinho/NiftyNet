@@ -46,10 +46,10 @@ class TensorBoardLogger(object):
         # initialise summary writer
         if not self.summary_dir or self.tensorboard_every_n <= 0:
             return
-        self.writer_train = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())
-        self.writer_valid = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, VALID), tf.get_default_graph())
+        self.writer_train = tf.compat.v1.summary.FileWriter(
+            os.path.join(self.summary_dir, TRAIN), tf.compat.v1.get_default_graph())
+        self.writer_valid = tf.compat.v1.summary.FileWriter(
+            os.path.join(self.summary_dir, VALID), tf.compat.v1.get_default_graph())
 
     def read_tensorboard_op(self, sender, **msg):
         """

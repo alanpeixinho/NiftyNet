@@ -42,7 +42,7 @@ class UniformSampler(ImageWindowDataset):
             smaller_final_batch_mode='drop',
             name=name)
 
-        tf.logging.info("initialised uniform sampler %s ", self.window.shapes)
+        tf.compat.v1.logging.info("initialised uniform sampler %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
 
     # pylint: disable=too-many-locals
@@ -95,7 +95,7 @@ class UniformSampler(ImageWindowDataset):
                         x_start:x_end, y_start:y_end, z_start:z_end, ...]
                     image_array.append(image_window[np.newaxis, ...])
                 except ValueError:
-                    tf.logging.fatal(
+                    tf.compat.v1.logging.fatal(
                         "dimensionality miss match in input volumes, "
                         "please specify spatial_window_size with a "
                         "3D tuple and make sure each element is "
@@ -193,7 +193,7 @@ def rand_spatial_coordinates(
     :return: (n_samples, N_SPATIAL) coordinates representing sampling
               window centres relative to img_spatial_size
     """
-    tf.logging.debug('uniform sampler, prior %s ignored', sampler_map)
+    tf.compat.v1.logging.debug('uniform sampler, prior %s ignored', sampler_map)
 
     # Sample coordinates at random
     half_win = np.floor(np.asarray(win_spatial_size) / 2.0).astype(np.int32)
@@ -222,7 +222,7 @@ def _infer_spatial_size(img_sizes, win_sizes):
     uniq_spatial_size = \
         set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) != 1:
-        tf.logging.fatal("Don't know how to generate sampling "
+        tf.compat.v1.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
                          "consistent. %s", uniq_spatial_size)

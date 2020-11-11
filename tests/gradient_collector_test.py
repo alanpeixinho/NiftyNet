@@ -19,11 +19,11 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                optimiser = tf.train.GradientDescentOptimizer(0.1)
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                optimiser = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads = optimiser.compute_gradients(loss)
                 grad_collector.add_to_collection([grads])
         self.assertAllClose(len(grad_collector._gradients), n_device)
@@ -40,11 +40,11 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                optimiser = tf.train.GradientDescentOptimizer(0.1)
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                optimiser = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads = optimiser.compute_gradients(loss)
                 grad_collector.add_to_collection(grads)
         self.assertAllClose(len(grad_collector._gradients), n_device)
@@ -61,12 +61,12 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                loss_1 = tf.reduce_mean(tf.abs(test_net - image))
-                optimiser = tf.train.GradientDescentOptimizer(0.1)
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                loss_1 = tf.reduce_mean(input_tensor=tf.abs(test_net - image))
+                optimiser = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads = optimiser.compute_gradients(loss)
                 grads_1 = optimiser.compute_gradients(loss_1)
                 grad_collector.add_to_collection([grads, grads_1])
@@ -84,15 +84,15 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                loss_1 = tf.reduce_mean(tf.abs(test_net - image))
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                loss_1 = tf.reduce_mean(input_tensor=tf.abs(test_net - image))
                 grads = dict()
                 optimiser = dict()
-                optimiser['opt'] = tf.train.GradientDescentOptimizer(0.1)
-                optimiser['opt_1'] = tf.train.GradientDescentOptimizer(0.1)
+                optimiser['opt'] = tf.compat.v1.train.GradientDescentOptimizer(0.1)
+                optimiser['opt_1'] = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads['opt'] = optimiser['opt'].compute_gradients(loss)
                 grads['opt_1'] = optimiser['opt_1'].compute_gradients(loss_1)
                 grad_collector.add_to_collection(grads)
@@ -113,12 +113,12 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                loss_1 = tf.reduce_mean(tf.abs(test_net - image))
-                optimiser = tf.train.GradientDescentOptimizer(0.1)
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                loss_1 = tf.reduce_mean(input_tensor=tf.abs(test_net - image))
+                optimiser = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads = optimiser.compute_gradients(loss)
                 grads_1 = optimiser.compute_gradients(loss_1)
                 grad_collector.add_to_collection([grads, grads_1])
@@ -136,11 +136,11 @@ class GradientCollectorTest(NiftyNetTestCase):
         grad_collector = GradientsCollector(n_devices=n_device)
 
         for idx in range(n_device):
-            with tf.name_scope('worker_%d' % idx) as scope:
+            with tf.compat.v1.name_scope('worker_%d' % idx) as scope:
                 image = tf.ones([2, 32, 32, 32, 4], dtype=tf.float32)
                 test_net = get_test_network()(image, is_training=True)
-                loss = tf.reduce_mean(tf.square(test_net - image))
-                optimiser = tf.train.GradientDescentOptimizer(0.1)
+                loss = tf.reduce_mean(input_tensor=tf.square(test_net - image))
+                optimiser = tf.compat.v1.train.GradientDescentOptimizer(0.1)
                 grads = optimiser.compute_gradients(loss)
                 grad_collector.add_to_collection(grads)
         self.assertAllClose(len(grad_collector._gradients), n_device)

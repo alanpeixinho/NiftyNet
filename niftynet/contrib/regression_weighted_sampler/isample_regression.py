@@ -94,7 +94,7 @@ class ISampleRegression(RegressionApplication):
 
             # modifying the original pipeline so that
             # the error maps are computed instead of the regression output
-            with tf.name_scope('validation'):
+            with tf.compat.v1.name_scope('validation'):
                 data_dict = self.get_sampler()[0][-1].pop_batch_op()
             image = tf.cast(data_dict['image'], tf.float32)
             net_out = self.net(image, is_training=self.is_training)
@@ -109,7 +109,7 @@ class ISampleRegression(RegressionApplication):
 
                 # computes absolute error
                 target = tf.cast(data_dict['output'], tf.float32)
-                net_out = tf.squared_difference(target, net_out)
+                net_out = tf.math.squared_difference(target, net_out)
 
             # window output and locations for aggregating volume results
             outputs_collector.add_to_collection(

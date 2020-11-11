@@ -78,7 +78,7 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
                     for d in [0, 1, 2]]
     resampled=tf.stack(resampled_list,5)
     permuted_shape=[batch_size]+[f-3 for f in self._coeff_shape]+self._knot_spacing+[spatial_rank]
-    permuted=tf.transpose(tf.reshape(resampled,permuted_shape),[0,1,4,2,5,3,6,7])
+    permuted=tf.transpose(a=tf.reshape(resampled,permuted_shape),perm=[0,1,4,2,5,3,6,7])
     valid_size=[(f-3)*k for f,k in zip(self._coeff_shape,self._knot_spacing)]
     reshaped=tf.reshape(permuted,[batch_size]+valid_size+[spatial_rank])
     cropped = reshaped[:,:self._output_shape[0],:self._output_shape[1],:self._output_shape[2],:]
@@ -120,17 +120,17 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
                                            coeff_shape=coeff_shape,
                                            name=name)
   def layer_op(self,field):
-    input_shape = tf.shape(field)
+    input_shape = tf.shape(input=field)
     input_dtype = field.dtype.as_numpy_dtype
     batch_size = int(field.shape[0])
     reshaped_field=tf.reshape(field, [batch_size, self._coeff_shape[0], self._coeff_shape[1], -1])
-    coords_intermediate = tf.image.resize_images(reshaped_field,self._output_shape[0:2],
-                                                 self._interpolation,align_corners=False)
+    coords_intermediate = tf.image.resize(reshaped_field,self._output_shape[0:2],
+                                                 self._interpolation)
     sz_xy_z1=[batch_size,self._output_shape[0]*self._output_shape[1],self._coeff_shape[2],-1]
     tmp=tf.reshape(coords_intermediate,sz_xy_z1)
     final_sz=[batch_size]+list(self._output_shape)+[-1]
     sz_xy_z2=[self._output_shape[0]*self._output_shape[1],self._output_shape[2]]
-    coords=tf.reshape(tf.image.resize_images(tmp,sz_xy_z2,self._interpolation,align_corners=False),final_sz)
+    coords=tf.reshape(tf.image.resize(tmp,sz_xy_z2,self._interpolation),final_sz)
     return coords
 
 class ResampledFieldGridWarperLayer(GridWarperLayer):
@@ -221,7 +221,7 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
       Error: If the input tensor size is not consistent with the constraints
         passed at construction time.
     """
-    input_shape = tf.shape(field)
+    input_shape = tf.shape(input=field)
     input_dtype = field.dtype.as_numpy_dtype
     batch_size = int(field.shape[0])
 

@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import functools as ft
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.layer.convolution import ConvLayer
 from niftynet.layer.convolution import ConvolutionalLayer
@@ -33,7 +33,7 @@ class ConvTest(NiftyNetTestCase):
         output_data = conv_layer(input_data)
         print(conv_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
 
@@ -54,7 +54,7 @@ class ConvTest(NiftyNetTestCase):
                                  keep_prob=dropout_prob)
         print(conv_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
 
@@ -119,7 +119,7 @@ class ConvTest(NiftyNetTestCase):
             <= 1e-6*np.square(orig_input).sum()
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
 
             small_value = sess.run(small_output)
             large_value = sess.run(large_output)
@@ -228,8 +228,8 @@ class ConvTest(NiftyNetTestCase):
                        'kernel_size': [3, 1, 3],
                        'stride': [2, 2, 2],
                        'with_bias': True,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_output_shape(rank=3,
                                      param_dict=input_param,
                                      output_shape=(2, 8, 8, 8, 10))
@@ -267,8 +267,8 @@ class ConvTest(NiftyNetTestCase):
                        'stride': 1,
                        'with_bias': True,
                        'feature_normalization': None,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 16, 10))
@@ -279,8 +279,8 @@ class ConvTest(NiftyNetTestCase):
                        'stride': 1,
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 16, 10),
@@ -293,8 +293,8 @@ class ConvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 8, 10),
@@ -307,8 +307,8 @@ class ConvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'relu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 8, 8, 10),
@@ -333,7 +333,7 @@ class ConvTest(NiftyNetTestCase):
                        'stride': [2, 2, 3],
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
+                       'w_regularizer': regularizers.L2(0.5),
                        'acti_func': 'prelu',
                        'padding': 'VALID'}
         self._test_conv_layer_output_shape(rank=3,
@@ -349,7 +349,7 @@ class ConvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'group',
                        'group_size': 4,
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 8, 8, 6, 8),
@@ -388,8 +388,8 @@ class ConvTest(NiftyNetTestCase):
                        'kernel_size': 5,
                        'stride': 1,
                        'with_bias': True,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_output_shape(rank=2,
                                      param_dict=input_param,
                                      output_shape=(2, 16, 16, 10))
@@ -420,8 +420,8 @@ class ConvTest(NiftyNetTestCase):
                        'stride': [2, 1],
                        'with_bias': True,
                        'feature_normalization': None,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 8, 16, 10))
@@ -432,8 +432,8 @@ class ConvTest(NiftyNetTestCase):
                        'stride': [2, 1],
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 8, 16, 10),
@@ -470,7 +470,7 @@ class ConvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 10),
@@ -484,7 +484,7 @@ class ConvTest(NiftyNetTestCase):
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'padding': 'VALID',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 7, 5, 10),

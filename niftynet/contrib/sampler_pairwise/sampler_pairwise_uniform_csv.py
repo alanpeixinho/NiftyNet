@@ -40,7 +40,7 @@ class PairwiseUniformSampler(Layer):
             self.reader_0.tf_dtypes,
             data_param)
         if self.window.has_dynamic_shapes:
-            tf.logging.fatal('Dynamic shapes not supported.\nPlease specify '
+            tf.compat.v1.logging.fatal('Dynamic shapes not supported.\nPlease specify '
                              'all spatial dims of the input data, for the '
                              'spatial_window_size parameter.')
             raise NotImplementedError
@@ -58,7 +58,7 @@ class PairwiseUniformSampler(Layer):
         # mapping random integer id to 4 volumes moving/fixed x image/label
         # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
-            lambda image_id: tuple(tf.py_func(
+            lambda image_id: tuple(tf.compat.v1.py_func(
                 self.get_pairwise_inputs, [image_id],
                 [tf.int64, tf.float32, tf.float32, tf.int32, tf.int32])),
             num_parallel_calls=4)  # supported by tf 1.4?
@@ -66,7 +66,7 @@ class PairwiseUniformSampler(Layer):
         image_dataset = image_dataset.shuffle(
             buffer_size=self.batch_size * 20)
         image_dataset = image_dataset.batch(self.batch_size)
-        self.iterator = image_dataset.make_initializable_iterator()
+        self.iterator = tf.compat.v1.data.make_initializable_iterator(image_dataset)
 
     def get_pairwise_inputs(self, image_id):
         # fetch fixed image
@@ -113,7 +113,7 @@ class PairwiseUniformSampler(Layer):
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
         image_id.set_shape((self.batch_size,))
-        image_id = tf.to_float(image_id)
+        image_id = tf.cast(image_id, dtype=tf.float32)
 
         fixed_inputs.set_shape(
             (self.batch_size,) + (None,) * self.spatial_rank + (2,))
@@ -152,10 +152,10 @@ class PairwiseUniformSampler(Layer):
             # when img==win make sure shift => 0.0
             # otherwise interpolation is out of bound
             batch_shift = [
-                tf.random_uniform(
+                tf.random.uniform(
                     shape=(self.batch_size, 1),
                     minval=0,
-                    maxval=tf.maximum(tf.to_float(img - win - 1), 0.01))
+                    maxval=tf.maximum(tf.cast(img - win - 1, dtype=tf.float32), 0.01))
                 for (win, img) in zip(win_spatial_shape, img_spatial_shape)]
             batch_shift = tf.concat(batch_shift, axis=1)
             affine_constraints = ((1.0, 0.0, 0.0, None),

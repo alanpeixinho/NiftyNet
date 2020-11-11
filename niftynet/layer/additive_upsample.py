@@ -53,7 +53,7 @@ class AdditiveUpsampleLayer(Layer):
         resizing_layer = ResizingLayer(self.new_size)
         split = tf.split(resizing_layer(input_tensor), self.n_splits, axis=-1)
         split_tensor = tf.stack(split, axis=-1)
-        output_tensor = tf.reduce_sum(split_tensor, axis=-1)
+        output_tensor = tf.reduce_sum(input_tensor=split_tensor, axis=-1)
         return output_tensor
 
 

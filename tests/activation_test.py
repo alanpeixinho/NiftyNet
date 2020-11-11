@@ -2,7 +2,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.layer.activation import ActiLayer
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -27,7 +27,7 @@ class ActivationTest(NiftyNetTestCase):
         out_acti = activation_layer(x)
         print(activation_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_acti)
             self.assertAllClose(out.shape, expected_shape)
 
@@ -62,12 +62,12 @@ class ActivationTest(NiftyNetTestCase):
     def test_3d_prelu_reg_shape(self):
         x = self.get_3d_input()
         prelu_layer = ActiLayer(func='prelu',
-                                regularizer=regularizers.l2_regularizer(0.5),
+                                regularizer=regularizers.L2(0.5),
                                 name='regularized')
         out_prelu = prelu_layer(x)
         print(prelu_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_prelu)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
@@ -77,7 +77,7 @@ class ActivationTest(NiftyNetTestCase):
         out_dropout = dropout_layer(x, keep_prob=0.8)
         print(dropout_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_dropout)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
@@ -115,12 +115,12 @@ class ActivationTest(NiftyNetTestCase):
     def test_2d_prelu_reg_shape(self):
         x = self.get_2d_input()
         prelu_layer = ActiLayer(func='prelu',
-                                regularizer=regularizers.l2_regularizer(0.5),
+                                regularizer=regularizers.L2(0.5),
                                 name='regularized')
         out_prelu = prelu_layer(x)
         print(prelu_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_prelu)
             self.assertAllClose((2, 16, 16, 8), out.shape)
 
@@ -130,7 +130,7 @@ class ActivationTest(NiftyNetTestCase):
         out_dropout = dropout_layer(x, keep_prob=0.8)
         print(dropout_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_dropout)
             self.assertAllClose((2, 16, 16, 8), out.shape)
 

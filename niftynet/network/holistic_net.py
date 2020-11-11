@@ -200,7 +200,7 @@ class HolisticNet(BaseNet):
             func='CHANNELWISE_DECONV',
             kernel_size=2,
             stride=2,
-            w_initializer=tf.constant_initializer(1.0, dtype=tf.float32))
+            w_initializer=tf.compat.v1.constant_initializer(1.0, dtype=tf.float32))
         up_score_3 = upsample_indep_scale3(score_3)
         scores_instances.append(up_score_3)
 
@@ -235,7 +235,7 @@ class HolisticNet(BaseNet):
             func='CHANNELWISE_DECONV',
             kernel_size=1,
             stride=2,
-            w_initializer=tf.constant_initializer(1.0, dtype=tf.float32))
+            w_initializer=tf.compat.v1.constant_initializer(1.0, dtype=tf.float32))
         up_score_4 = upsample_indep_scale4(score_4)
         scores_instances.append(up_score_4)
 
@@ -347,9 +347,9 @@ class MergeLayer(TrainableLayer):
         :return: fused tensor
         """
         if self.func == 'MAXOUT':
-            return tf.reduce_max(tf.stack(roots, axis=-1), axis=-1)
+            return tf.reduce_max(input_tensor=tf.stack(roots, axis=-1), axis=-1)
         elif self.func == 'AVERAGE':
-            return tf.reduce_mean(tf.stack(roots, axis=-1), axis=-1)
+            return tf.reduce_mean(input_tensor=tf.stack(roots, axis=-1), axis=-1)
         elif self.func == 'WEIGHTED_AVERAGE':
             input_tensor = tf.stack(roots, axis=-1)
             rank = input_tensor.shape.ndims
@@ -357,7 +357,7 @@ class MergeLayer(TrainableLayer):
             perm[-2], perm[-1] = perm[-1], perm[-2]
 
             output_tensor = input_tensor
-            output_tensor = tf.transpose(output_tensor, perm=perm)
+            output_tensor = tf.transpose(a=output_tensor, perm=perm)
             output_tensor = tf.unstack(output_tensor, axis=-1)
             roots_merged = []
             for f in range(len(output_tensor)):

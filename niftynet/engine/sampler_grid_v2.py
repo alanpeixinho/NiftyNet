@@ -50,8 +50,8 @@ class GridSampler(ImageWindowDataset):
             self.border_size = tuple(self.border_size) + \
                                (self.border_size[-1],)
         self.border_size = self.border_size[:N_SPATIAL]
-        tf.logging.info('initialised window instance')
-        tf.logging.info("initialised grid sampler %s", self.window.shapes)
+        tf.compat.v1.logging.info('initialised window instance')
+        tf.compat.v1.logging.info("initialised grid sampler %s", self.window.shapes)
 
     def layer_op(self):
         while True:
@@ -73,17 +73,17 @@ class GridSampler(ImageWindowDataset):
                     self.batch_size - n_locations % self.batch_size
             total_locations = n_locations + extra_locations
 
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'grid sampling image sizes: %s', image_shapes)
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'grid sampling window sizes: %s', static_window_shapes)
             if extra_locations > 0:
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     "yielding %s locations from image, "
                     "extended to %s to be divisible by batch size %s",
                     n_locations, total_locations, self.batch_size)
             else:
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     "yielding %s locations from image", n_locations)
             for i in range(total_locations):
                 idx = i % n_locations
@@ -99,7 +99,7 @@ class GridSampler(ImageWindowDataset):
                         image_window = data[name][
                             x_start:x_end, y_start:y_end, z_start:z_end, ...]
                     except ValueError:
-                        tf.logging.fatal(
+                        tf.compat.v1.logging.fatal(
                             "dimensionality miss match in input volumes, "
                             "please specify spatial_window_size with a "
                             "3D tuple and make sure each element is "
@@ -121,7 +121,7 @@ class GridSampler(ImageWindowDataset):
                     output_dict[name] = np.ones_like(output_dict[name]) * -1
                 yield output_dict
         except (NameError, KeyError):
-            tf.logging.fatal("No feasible samples from %s", self)
+            tf.compat.v1.logging.fatal("No feasible samples from %s", self)
             raise
 
 
@@ -192,7 +192,7 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
         win_size = max(int(win_size), 1)
         step_size = max(int(step_size), 1)
     except (TypeError, ValueError):
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             'step points should be specified by integers, received:'
             '%s, %s, %s, %s', starting, ending, win_size, step_size)
         raise ValueError

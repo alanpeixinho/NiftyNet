@@ -40,7 +40,7 @@ class SegmentationApplicationPatchSampler(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         super(SegmentationApplicationPatchSampler, self).__init__()
-        tf.logging.info('starting segmentation application')
+        tf.compat.v1.logging.info('starting segmentation application')
         self.action = action
 
         self.net_param = net_param
@@ -82,7 +82,7 @@ class SegmentationApplicationPatchSampler(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -303,15 +303,15 @@ class SegmentationApplicationPatchSampler(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -320,7 +320,7 @@ class SegmentationApplicationPatchSampler(BaseApplication):
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -333,15 +333,15 @@ class SegmentationApplicationPatchSampler(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables

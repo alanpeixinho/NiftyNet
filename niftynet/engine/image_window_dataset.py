@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
-from tensorflow.python.keras.utils import GeneratorEnqueuer
+from tensorflow.keras.utils import GeneratorEnqueuer
 
 from niftynet.engine.image_window import ImageWindow, N_SPATIAL, \
     LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
@@ -71,7 +71,7 @@ class ImageWindowDataset(Layer):
         self.batch_size = batch_size
         self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
         if self.queue_length > queue_length:
-            tf.logging.warning(
+            tf.compat.v1.logging.warning(
                 'sampler queue_length should be larger than batch_size, '
                 'defaulting to batch_size * 5.0 (%s).', self.queue_length)
 
@@ -194,7 +194,7 @@ class ImageWindowDataset(Layer):
             # in case `run_threads` is not called,
             # here we initialise the dataset and iterator
             self.init_dataset()
-            self.iterator = self.dataset.make_one_shot_iterator()
+            self.iterator = tf.compat.v1.data.make_one_shot_iterator(self.dataset)
             # self.iterator = tf.data.Iterator.from_structure(
             #     self.dataset.output_types, self.dataset.output_shapes)
 
@@ -261,9 +261,9 @@ class ImageWindowDataset(Layer):
                     var_shape = in_var.shape.as_list()
                     if batch_size > 1:
                         paddings = [[0, 0] for _ in in_var.shape]
-                        paddings[0][1] = batch_size - tf.shape(in_var)[0]
+                        paddings[0][1] = batch_size - tf.shape(input=in_var)[0]
                         in_var = tf.pad(
-                            in_var, paddings, "CONSTANT", constant_values=-1)
+                            tensor=in_var, paddings=paddings, mode="CONSTANT", constant_values=-1)
                     var_shape[0] = batch_size
                     in_var.set_shape(var_shape)
                     out_dict[in_name] = in_var
@@ -282,7 +282,7 @@ class ImageWindowDataset(Layer):
         :return: a `tf.data.Dataset`
         """
         # dataset: a list of integers
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             'Initialising Dataset from %s subjects...', self.n_subjects)
         dataset = tf.data.Dataset.range(self.n_subjects)
         if self.shuffle:
@@ -294,7 +294,7 @@ class ImageWindowDataset(Layer):
         def _tf_wrapper(idx):
             flattened_types = nest.flatten(self.tf_dtypes)
             flattened_shapes = nest.flatten(self.tf_shapes)
-            flat_values = tf.py_func(
+            flat_values = tf.compat.v1.py_func(
                 func=lambda subject_id: nest.flatten(self(subject_id)),
                 inp=[idx],
                 Tout=flattened_types)
@@ -315,7 +315,7 @@ class ImageWindowDataset(Layer):
 
         :return: a `tf.data.Dataset`
         """
-        tf.logging.info('Initialising dataset from generator...')
+        tf.compat.v1.logging.info('Initialising dataset from generator...')
 
         if self._num_threads < 2 or not self.shuffle:
             window_generator = self

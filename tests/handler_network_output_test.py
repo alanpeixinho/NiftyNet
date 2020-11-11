@@ -12,7 +12,7 @@ from tests.niftynet_testcase import NiftyNetTestCase
 
 def set_iteration_update(msg):
     msg.ops_to_run[NETWORK_OUTPUT] = \
-        tf.get_default_graph().get_tensor_by_name("G/conv_bn_selu/conv_/w:0")
+        tf.compat.v1.get_default_graph().get_tensor_by_name("G/conv_bn_selu/conv_/w:0")
 
 
 class EventConsoleTest(NiftyNetTestCase):

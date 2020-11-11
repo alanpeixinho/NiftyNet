@@ -69,7 +69,7 @@ class DataFromFile(Loadable):
                     load_image_obj(_file, _loader).header.get_data_dtype()
                     for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, TypeError, AttributeError):
-                tf.logging.warning('could not decide image data type')
+                tf.compat.v1.logging.warning('could not decide image data type')
                 self._dtype = (np.dtype(np.float32),) * len(self.file_path)
         return self._dtype
 
@@ -94,7 +94,7 @@ class DataFromFile(Loadable):
             self._file_path = tuple(resolve_file_name(path, ('.', home_folder))
                                     for path in path_array)
         except (TypeError, AssertionError, AttributeError, IOError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "unrecognised file path format, should be a valid filename,"
                 "or a sequence of filenames %s", path_array)
             raise IOError
@@ -208,7 +208,7 @@ class SpatialImage2D(DataFromFile):
                     load_image_obj(_file, _loader).header['dim'][1:6]
                     for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, KeyError, AttributeError, IndexError):
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     'unknown image shape from header %s', self.file_path)
                 raise ValueError
             try:
@@ -217,7 +217,7 @@ class SpatialImage2D(DataFromFile):
                          for shape in self._original_shape])
                 assert len(non_modality_shapes) == 1
             except (TypeError, IndexError, AssertionError):
-                tf.logging.fatal("could not combining multimodal images: "
+                tf.compat.v1.logging.fatal("could not combining multimodal images: "
                                  "shapes not consistent %s -- %s",
                                  self.file_path, self._original_shape)
                 raise ValueError
@@ -244,7 +244,7 @@ class SpatialImage2D(DataFromFile):
                 self._original_pixdim.append(image_obj.header.get_zooms()[:3])
                 self._original_affine.append(image_obj.affine)
             except (TypeError, IndexError, AttributeError):
-                tf.logging.fatal('could not read header from %s', file_i)
+                tf.compat.v1.logging.fatal('could not read header from %s', file_i)
                 raise ValueError
                 # self._original_pixdim = tuple(self._original_pixdim)
                 # self._original_affine = tuple(self._original_affine)
@@ -290,7 +290,7 @@ class SpatialImage2D(DataFromFile):
             return tuple(nib.aff2axcodes(affine)
                          for affine in self.original_affine)
         except IndexError:
-            tf.logging.fatal('unknown affine in header %s: %s',
+            tf.compat.v1.logging.fatal('unknown affine in header %s: %s',
                              self.file_path, self.original_affine)
             raise
 
@@ -317,7 +317,7 @@ class SpatialImage2D(DataFromFile):
             interp_order = int(interp_order)
             self._interp_order = (int(interp_order),) * len(self.file_path)
         except (TypeError, ValueError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "output interp_order should be an integer or "
                 "a sequence of integers that matches len(self.file_path)")
             raise ValueError
@@ -347,7 +347,7 @@ class SpatialImage2D(DataFromFile):
         :return: a tuple of pixdims, with each element as pixdims
             of an image file
         """
-        tf.logging.warning("resampling 2D images not implemented")
+        tf.compat.v1.logging.warning("resampling 2D images not implemented")
         return (None,) * len(self.file_path)
 
     @output_pixdim.setter
@@ -371,7 +371,7 @@ class SpatialImage2D(DataFromFile):
                     tuple(float(pixdim) for pixdim in output_pixdim)
             self._output_pixdim = (output_pixdim,) * len(self.file_path)
         except (TypeError, ValueError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'could not set output pixdim '
                 '%s for %s', output_pixdim, self.file_path)
             raise
@@ -387,7 +387,7 @@ class SpatialImage2D(DataFromFile):
         :return: a tuple of pixdims, with each element as pixdims
             of an image file
         """
-        tf.logging.warning("reorienting 2D images not implemented")
+        tf.compat.v1.logging.warning("reorienting 2D images not implemented")
         return (None,) * len(self.file_path)
 
     @output_axcodes.setter
@@ -410,7 +410,7 @@ class SpatialImage2D(DataFromFile):
                 output_axcodes = (output_axcodes,)
             self._output_axcodes = output_axcodes * len(self.file_path)
         except (TypeError, ValueError):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'could not set output pixdim '
                 '%s for %s', output_axcodes, self.file_path)
             raise
@@ -432,7 +432,7 @@ class SpatialImage2D(DataFromFile):
             try:
                 return np.concatenate(image_data, axis=4)
             except ValueError:
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     "multi-modal data shapes not consistent -- trying to "
                     "concat {}.".format([mod.shape for mod in image_data]))
                 raise
@@ -502,7 +502,7 @@ class SpatialImage3D(SpatialImage2D):
                     int(round(ii * jj))
                     for ii, jj in zip(spatial_shape, zoom_ratio))
             except (ValueError, IndexError):
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     'unknown pixdim %s: %s',
                     self.original_pixdim, self.output_pixdim)
                 raise ValueError
@@ -587,7 +587,7 @@ class SpatialImage4D(SpatialImage3D):
         try:
             image_data = np.concatenate(mod_list, axis=4)
         except ValueError:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "multi-modal data shapes not consistent -- trying to "
                 "concatenate {}.".format([mod.shape for mod in mod_list]))
             raise
@@ -642,7 +642,7 @@ class ImageFactory(object):
         :return: an image instance
         """
         if file_path is None:
-            tf.logging.fatal('No file_path provided, '
+            tf.compat.v1.logging.fatal('No file_path provided, '
                              'please check input sources in config file')
             raise ValueError
 
@@ -668,10 +668,10 @@ class ImageFactory(object):
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
             except (AssertionError, TypeError, IOError, AttributeError):
-                tf.logging.fatal('Could not load file: %s', file_path)
+                tf.compat.v1.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
-            tf.logging.fatal('Not supported image type from:\n%s', file_path)
+            tf.compat.v1.logging.fatal('Not supported image type from:\n%s', file_path)
             raise NotImplementedError(
                 "unrecognised spatial rank {}".format(ndims))
         return image_type(file_path, **kwargs)

@@ -15,7 +15,7 @@ class INetDenseTest(NiftyNetTestCase):
         print(densenet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out.shape)
 
@@ -28,7 +28,7 @@ class INetDenseTest(NiftyNetTestCase):
         print(densenet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 3), out.shape)
 
@@ -41,7 +41,7 @@ class INetDenseTest(NiftyNetTestCase):
         print(densenet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 48, 48, 48, 3), out.shape)
 
@@ -54,7 +54,7 @@ class INetDenseTest(NiftyNetTestCase):
         print(densenet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 2), out.shape)
 

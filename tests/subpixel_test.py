@@ -33,7 +33,7 @@ class SubPixelTest(NiftyNetTestCase):
         layer = SubPixelLayer(**param_dict)
         output_data = layer(lr_image=input_data, is_training=True, keep_prob=1.0)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
 

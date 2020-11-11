@@ -91,7 +91,7 @@ def load_image_obj(filename, loader=None):
             raise ValueError('Image Loader {} supported but library not found.'
                              ' Required libraries: {}'
                              .format(loader, SUPPORTED_LOADERS[loader]))
-        tf.logging.debug('Using requested loader: {}'.format(loader))
+        tf.compat.v1.logging.debug('Using requested loader: {}'.format(loader))
         loader_params = AVAILABLE_LOADERS[loader]
         return loader_params['func'](filename)
     if loader:
@@ -104,7 +104,7 @@ def load_image_obj(filename, loader=None):
 
         try:
             img = loader_params['func'](filename)
-            tf.logging.debug('Using Image Loader {}.'.format(name))
+            tf.compat.v1.logging.debug('Using Image Loader {}.'.format(name))
             return img
         except IOError:
             # e.g. Nibabel cannot load standard 2D images
@@ -178,7 +178,7 @@ def imread_numpy(filename=None):
     return image2nibabel(fake_img, affine=np.eye(4))
 
 
-tf.logging.info(
+tf.compat.v1.logging.info(
     'Available Image Loaders:\n{}.'.format(list(AVAILABLE_LOADERS.keys())))
 
 

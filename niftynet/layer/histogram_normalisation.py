@@ -104,12 +104,12 @@ class HistogramNormalisationLayer(DataDependentLayer):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         if self.is_ready():
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 "normalisation histogram reference models ready"
                 " for {}:{}".format(self.image_name, self.modalities))
             return
         mod_to_train = self.__check_modalities_to_train()
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             "training normalisation histogram references "
             "for {}:{}, using {} subjects".format(
                 self.image_name, mod_to_train, len(image_list)))
@@ -133,7 +133,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         assert data_array.shape[4] <= len(self.modalities)
 
         if not self.mapping:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "calling normaliser with empty mapping,"
                 "probably {} is not loaded".format(self.model_file))
             raise RuntimeError

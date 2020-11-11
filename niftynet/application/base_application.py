@@ -200,7 +200,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         :return:
         """
         self.is_validation = \
-            tf.placeholder_with_default(False, [], 'is_validation')
+            tf.compat.v1.placeholder_with_default(False, [], 'is_validation')
 
     @property
     def action(self):
@@ -224,7 +224,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             self._action = value.lower()
             assert len(self._action) >= 2
         except (AttributeError, AssertionError):
-            tf.logging.fatal('Error setting application action: %s', value)
+            tf.compat.v1.logging.fatal('Error setting application action: %s', value)
 
     @property
     def is_training(self):

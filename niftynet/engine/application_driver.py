@@ -92,7 +92,7 @@ class ApplicationDriver(object):
             infer_param = workflow_param.get('INFERENCE', None)
             app_param = workflow_param.get('CUSTOM', None)
         except AttributeError:
-            tf.logging.fatal('parameters should be dictionaries')
+            tf.compat.v1.logging.fatal('parameters should be dictionaries')
             raise
 
         assert os.path.exists(system_param.model_dir), \
@@ -202,7 +202,7 @@ class ApplicationDriver(object):
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
-        with tf.Session(config=tf_config(self.cuda_memory), graph=graph) as sess:
+        with tf.compat.v1.Session(config=tf_config(self.cuda_memory), graph=graph) as sess:
             try:
 
 
@@ -214,7 +214,7 @@ class ApplicationDriver(object):
                 #sess = tf.get_default_session()
 
         
-                init = tf.global_variables_initializer()
+                init = tf.compat.v1.global_variables_initializer()
                 sess.run(init)
 
                 import re
@@ -222,14 +222,14 @@ class ApplicationDriver(object):
                 # restore using regex matching
                 var_regex = re.compile(self.vars_to_restore)
                 to_restore, to_randomise = [], []
-                for restorable in tf.global_variables():
+                for restorable in tf.compat.v1.global_variables():
                     if var_regex.search(restorable.name):
                         to_restore.append(restorable)
                     else:
                         to_randomise.append(restorable)
 
                 if not to_restore:
-                    tf.logging.fatal(
+                    tf.compat.v1.logging.fatal(
                         'vars_to_restore specified: %s, but nothing matched.',
                         self.vars_to_restore)
                     assert to_restore, 'Nothing to restore (--vars_to_restore)'
@@ -238,29 +238,29 @@ class ApplicationDriver(object):
 
                 var_names = [  # getting first three item to print
                     var_restore.name for var_restore in to_restore[:3]]
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     'Restoring %s out of %s variables from %s: \n%s, ...',
                     len(to_restore),
-                    len(tf.global_variables()),
+                    len(tf.compat.v1.global_variables()),
                     snapshot_fpath, ',\n'.join(var_names))
                 # Initialize vars to randomize
                 #init_op = tf.variables_initializer(to_randomise)
                 #tf.get_default_session().run(init_op)
 
-                sess = tf.get_default_session()
+                sess = tf.compat.v1.get_default_session()
                 #import pdb; pdb.set_trace()
 
                 # broadcasting event of session started
                 SESS_STARTED.send(application, iter_msg=None)
 
-                graphdef_inf = tf.graph_util.remove_training_nodes(graph.as_graph_def())
+                graphdef_inf = tf.compat.v1.graph_util.remove_training_nodes(graph.as_graph_def())
 
                 if application.action == 'export':
                     if application.action_param.frozen_model is not None:
                         output_name = 'worker_0/post_processing/Softmax'
                         input_name = 'worker_0/validation/IteratorGetNext'
 
-                        graphdef_frozen = tf.graph_util.convert_variables_to_constants(
+                        graphdef_frozen = tf.compat.v1.graph_util.convert_variables_to_constants(
                             sess, graphdef_inf, [output_name])
 
 
@@ -292,7 +292,7 @@ class ApplicationDriver(object):
                     loop_status=loop_status)
 
             except KeyboardInterrupt:
-                tf.logging.warning('User cancelled application')
+                tf.compat.v1.logging.warning('User cancelled application')
             except (tf.errors.OutOfRangeError, EOFError):
                 if not loop_status.get('normal_exit', False):
                     # reached the end of inference Dataset
@@ -304,7 +304,7 @@ class ApplicationDriver(object):
 #                 exc_type, exc_value, exc_traceback = sys.exc_info()
 #                 traceback.print_exception(
 #                     exc_type, exc_value, exc_traceback, file=sys.stdout)
-                tf.logging.error('This model could not be allocated on this device.')
+                tf.compat.v1.logging.error('This model could not be allocated on this device.')
                 final_user_message = ['Failure cause = GPU OUT OF MEMORY.', 'Not enough memory to build your model.', 'Try reducing batch/input size to reduce memory footprint.']
                 abort = True
             except RuntimeError:
@@ -315,7 +315,7 @@ class ApplicationDriver(object):
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
                 if not abort:
-                    tf.logging.info('cleaning up...')
+                    tf.compat.v1.logging.info('cleaning up...')
                     # broadcasting session finished event
                     print(SESS_FINISHED)
                     iter_msg = IterationMessage()
@@ -325,14 +325,14 @@ class ApplicationDriver(object):
         application.stop()
         if not loop_status.get('normal_exit', False):
             # loop didn't finish normally
-            tf.logging.warning('stopped early, incomplete iterations.')
-        tf.logging.info(
+            tf.compat.v1.logging.warning('stopped early, incomplete iterations.')
+        tf.compat.v1.logging.info(
             "%s stopped (time in second %.2f).",
             type(application).__name__, (time.time() - start_time))
 
         if final_user_message:
             for message in final_user_message:
-                tf.logging.error(message)
+                tf.compat.v1.logging.error(message)
 
     # pylint: disable=not-context-manager
     @staticmethod
@@ -351,7 +351,7 @@ class ApplicationDriver(object):
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
             # initialise sampler
-            with tf.name_scope('Sampler'):
+            with tf.compat.v1.name_scope('Sampler'):
                 application.initialise_sampler()
                 for sampler in traverse_nested(application.get_sampler()):
                     sampler.set_num_threads(num_threads)
@@ -367,11 +367,11 @@ class ApplicationDriver(object):
                 worker_device = device_string(
                     num_gpus, gpu_id, True, is_training_action)
                 scope_string = 'worker_{}'.format(gpu_id)
-                with tf.name_scope(scope_string), tf.device(worker_device):
+                with tf.compat.v1.name_scope(scope_string), tf.device(worker_device):
                     # setup network for each of the multiple devices
                     application.connect_data_and_network(
                         outputs_collector, gradients_collector)
-            with tf.name_scope('MergeOutputs'):
+            with tf.compat.v1.name_scope('MergeOutputs'):
                 outputs_collector.finalise_output_op()
             application.outputs_collector = outputs_collector
             application.gradients_collector = gradients_collector
@@ -435,7 +435,7 @@ class ApplicationDriver(object):
 
             # Checking stopping conditions
             if iter_msg.should_stop:
-                tf.logging.info('stopping -- event handler: %s.',
+                tf.compat.v1.logging.info('stopping -- event handler: %s.',
                                 iter_msg.should_stop)
                 break
         # loop finished without any exception
@@ -458,7 +458,7 @@ class ApplicationDriver(object):
         # ``iter_msg.ops_to_run`` are populated with the ops to run in
         # each iteration, fed into ``session.run()`` and then
         # passed to the application (and observers) for interpretation.
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
         assert sess, 'method should be called within a TF session context.'
 
         iteration_message.current_iter_output = sess.run(

@@ -29,7 +29,7 @@ class MultiOutputApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting multioutput test')
+        tf.compat.v1.logging.info('starting multioutput test')
         self.action = action
 
         self.net_param = net_param
@@ -71,7 +71,7 @@ class MultiOutputApplication(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -201,16 +201,16 @@ class MultiOutputApplication(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
         if self.is_training:
             # extract data
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -219,7 +219,7 @@ class MultiOutputApplication(BaseApplication):
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -233,16 +233,16 @@ class MultiOutputApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
 
             # set the optimiser and the gradient
-            to_optimise = tf.trainable_variables()
+            to_optimise = tf.compat.v1.trainable_variables()
             vars_to_freeze = \
                 self.action_param.vars_to_freeze or \
                 self.action_param.vars_to_restore
@@ -252,15 +252,15 @@ class MultiOutputApplication(BaseApplication):
                 # Only optimise vars that are not frozen
                 to_optimise = \
                     [v for v in to_optimise if not var_regex.search(v.name)]
-                tf.logging.info(
+                tf.compat.v1.logging.info(
                     "Optimizing %d out of %d trainable variables, "
                     "the other variables fixed (--vars_to_freeze %s)",
                     len(to_optimise),
-                    len(tf.trainable_variables()),
+                    len(tf.compat.v1.trainable_variables()),
                     vars_to_freeze)
 
             grads = self.optimiser.compute_gradients(
-                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise)
 
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
@@ -291,8 +291,8 @@ class MultiOutputApplication(BaseApplication):
             soft_max_out = softmax_layer(net_out)
             # sum_prob_out = tf.reshape(tf.reduce_sum(soft_max_out),[1,1])
             # min_prob_out = tf.reshape(tf.reduce_min(soft_max_out),[1,1])
-            sum_prob_out = tf.reduce_sum(soft_max_out)
-            min_prob_out = tf.reduce_min(soft_max_out)
+            sum_prob_out = tf.reduce_sum(input_tensor=soft_max_out)
+            min_prob_out = tf.reduce_min(input_tensor=soft_max_out)
 
             outputs_collector.add_to_collection(
                 var=arg_max_out, name='window_argmax',

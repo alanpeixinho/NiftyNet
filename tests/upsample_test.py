@@ -25,7 +25,7 @@ class UpSampleTest(NiftyNetTestCase):
         upsample_layer = UpSampleLayer(**param_dict)
         output_data = upsample_layer(input_data)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output = sess.run(output_data)
             self.assertAllClose(output_shape, output.shape)
 

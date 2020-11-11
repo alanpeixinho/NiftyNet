@@ -23,7 +23,7 @@ class SegmentationApplicationBFAug(SegmentationApplication):
     def __init__(self, net_param, action_param, is_training):
         SegmentationApplication.__init__(
             self, net_param, action_param, is_training)
-        tf.logging.info('starting segmentation application')
+        tf.compat.v1.logging.info('starting segmentation application')
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
@@ -40,7 +40,7 @@ class SegmentationApplicationBFAug(SegmentationApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError

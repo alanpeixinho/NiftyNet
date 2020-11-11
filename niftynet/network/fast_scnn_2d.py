@@ -209,12 +209,12 @@ class SCNNPyramidBlock(TrainableLayer):
         w, h = images.shape[1], images.shape[2]
 
         for bin_size in self.bin_sizes:
-            x = tf.layers.AveragePooling2D(pool_size=(w // bin_size, h // bin_size),
+            x = tf.compat.v1.layers.AveragePooling2D(pool_size=(w // bin_size, h // bin_size),
                                                  strides=(w // bin_size, h // bin_size))(images)
             x = ConvLayer(128, kernel_size=3, stride=2, padding='same',
                     w_initializer=self.w_initializer,
                     w_regularizer=self.w_regularizer)(x)
-            x = tf.image.resize_images(x, (w,h))
+            x = tf.image.resize(x, (w,h))
 
             concat_list.append(x)
 

@@ -18,7 +18,7 @@ class INetHybridPreWarpTest(NiftyNetTestCase):
         print(hybridnet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
             self.assertAllClose((2, 32, 32, 32, 3), out[1].shape)
@@ -32,7 +32,7 @@ class INetHybridPreWarpTest(NiftyNetTestCase):
         print(hybridnet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
             self.assertAllClose((2, 32, 32, 2), out[1].shape)
@@ -49,7 +49,7 @@ class INetHybridTwoStreamTest(NiftyNetTestCase):
         print(hybridnet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
             self.assertAllClose((2, 32, 32, 32, 3), out[1].shape)
@@ -64,7 +64,7 @@ class INetHybridTwoStreamTest(NiftyNetTestCase):
         print(hybridnet_instance)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
             self.assertAllClose((2, 32, 32, 2), out[1].shape)

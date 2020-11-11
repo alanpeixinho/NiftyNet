@@ -39,7 +39,7 @@ class RegApp(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting label-driven registration')
+        tf.compat.v1.logging.info('starting label-driven registration')
         self.action = action
 
         self.net_param = net_param
@@ -119,7 +119,7 @@ class RegApp(BaseApplication):
                                  gradients_collector=None):
 
         def switch_samplers(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0 if for_training else -1]
                 return sampler()  # returns image only
 
@@ -128,9 +128,9 @@ class RegApp(BaseApplication):
             self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
                 sampler_window = \
-                    tf.cond(tf.logical_not(self.is_validation),
-                            lambda: switch_samplers(True),
-                            lambda: switch_samplers(False))
+                    tf.cond(pred=tf.logical_not(self.is_validation),
+                            true_fn=lambda: switch_samplers(True),
+                            false_fn=lambda: switch_samplers(False))
             else:
                 sampler_window = switch_samplers(True)
 
@@ -165,26 +165,26 @@ class RegApp(BaseApplication):
             dice_fg = 1.0 - label_loss
             # appending regularisation loss
             total_loss = label_loss
-            reg_loss = tf.get_collection('bending_energy')
+            reg_loss = tf.compat.v1.get_collection('bending_energy')
             if reg_loss:
                 total_loss = total_loss + \
-                    self.net_param.decay * tf.reduce_mean(reg_loss)
+                    self.net_param.decay * tf.reduce_mean(input_tensor=reg_loss)
 
             self.total_loss = total_loss
 
             # compute training gradients
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
             grads = self.optimiser.compute_gradients(
-                total_loss, colocate_gradients_with_ops=True)
+                total_loss)
             gradients_collector.add_to_collection(grads)
 
             metrics_dice = loss_func(
-                prediction=tf.to_float(resampled_moving_label >= 0.5),
-                ground_truth=tf.to_float(fixed_label >= 0.5))
+                prediction=tf.cast(resampled_moving_label >= 0.5, dtype=tf.float32),
+                ground_truth=tf.cast(fixed_label >= 0.5, dtype=tf.float32))
             metrics_dice = 1.0 - metrics_dice
 
             # command line output
@@ -192,7 +192,7 @@ class RegApp(BaseApplication):
                 var=dice_fg, name='one_minus_data_loss',
                 collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=tf.reduce_mean(reg_loss), name='bending_energy',
+                var=tf.reduce_mean(input_tensor=reg_loss), name='bending_energy',
                 collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=total_loss, name='total_loss', collection=CONSOLE)

@@ -67,7 +67,7 @@ class LossFunction(Layer):
                 else:
                     data_loss.append(self._data_loss_func(
                         pred, ground_truth))
-            return tf.reduce_mean(data_loss)
+            return tf.reduce_mean(input_tensor=data_loss)
 
 
 def cross_entropy(prediction,
@@ -78,6 +78,6 @@ def cross_entropy(prediction,
     :param ground_truth: the classification ground truth
     :return: the loss
     """
-    ground_truth = tf.to_int64(ground_truth)
+    ground_truth = tf.cast(ground_truth, dtype=tf.int64)
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=prediction, labels=ground_truth)
     return loss

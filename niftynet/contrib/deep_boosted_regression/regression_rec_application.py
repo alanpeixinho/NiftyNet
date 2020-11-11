@@ -34,7 +34,7 @@ class RegressionRecApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting recursive regression application')
+        tf.compat.v1.logging.info('starting recursive regression application')
         self.action = action
 
         self.net_param = net_param
@@ -221,15 +221,15 @@ class RegressionRecApplication(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(True),
-                                    lambda: switch_sampler(False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(True),
+                                    false_fn=lambda: switch_sampler(False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -242,7 +242,7 @@ class RegressionRecApplication(BaseApplication):
             #res4_out = self.net2(tf.concat([image, pct3_out],4), self.is_training)
             #pct4_out = tf.add(pct3_out,res4_out)
 	    #net_out = self.net(image, is_training=self.is_training)
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -274,11 +274,11 @@ class RegressionRecApplication(BaseApplication):
                                   #ground_truth=ground_truth,
                                   #weight_map=weight_map)
 
-            reg_losses = tf.get_collection(
-                tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = reg_loss + data_loss1 + data_loss2 + data_loss3
             else:
                 loss = data_loss1 + data_loss2 + data_loss3

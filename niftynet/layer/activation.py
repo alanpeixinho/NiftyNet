@@ -16,7 +16,7 @@ def prelu(f_in, channelwise_params):
 def selu(x, name):
     alpha = 1.6732632423543772848170429916717
     scale = 1.0507009873554804934193349852946
-    return scale * tf.where(x >= 0.0, x, alpha * tf.nn.elu(x))
+    return scale * tf.compat.v1.where(x >= 0.0, x, alpha * tf.nn.elu(x))
 
 
 def leaky_relu(x, name):
@@ -51,13 +51,13 @@ class ActiLayer(TrainableLayer):
         super(ActiLayer, self).__init__(name=self.layer_name)
 
         # these are used for prelu variables
-        self.initializers = {'alpha': tf.constant_initializer(0.0)}
+        self.initializers = {'alpha': tf.compat.v1.constant_initializer(0.0)}
         self.regularizers = {'alpha': regularizer}
 
     def layer_op(self, input_tensor, keep_prob=None):
         func_ = look_up_operations(self.func, SUPPORTED_OP)
         if self.func == 'prelu':
-            alphas = tf.get_variable(
+            alphas = tf.compat.v1.get_variable(
                 'alpha', input_tensor.shape[-1],
                 initializer=self.initializers['alpha'],
                 regularizer=self.regularizers['alpha'])

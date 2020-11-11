@@ -62,7 +62,7 @@ class MultiClassifSegApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         super(MultiClassifSegApplication, self).__init__()
-        tf.logging.info('starting classification application')
+        tf.compat.v1.logging.info('starting classification application')
         self.action = action
 
         self.net_param = net_param
@@ -112,7 +112,7 @@ class MultiClassifSegApplication(BaseApplication):
             image_reader_names = ('image', 'inferred', 'label')
             csv_reader_names = ('value',)
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -370,10 +370,10 @@ class MultiClassifSegApplication(BaseApplication):
         """ This method defines several monitoring metrics that
         are derived from the confusion matrix """
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
-        prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
+        prediction = tf.reshape(tf.argmax(input=net_out, axis=-1), [-1])
         num_classes = 2
-        conf_mat = tf.confusion_matrix(labels, prediction, num_classes)
-        conf_mat = tf.to_float(conf_mat)
+        conf_mat = tf.math.confusion_matrix(labels=labels, predictions=prediction, num_classes=num_classes)
+        conf_mat = tf.cast(conf_mat, dtype=tf.float32)
         if self.segmentation_param.num_classes == 2:
             outputs_collector.add_to_collection(
                 var=conf_mat[1][1], name='true_positives',
@@ -399,7 +399,7 @@ class MultiClassifSegApplication(BaseApplication):
                 collection=TF_SUMMARIES)
 
         outputs_collector.add_to_collection(
-            var=tf.trace(conf_mat), name='accuracy',
+            var=tf.linalg.trace(conf_mat), name='accuracy',
             average_over_devices=True, summary_type='scalar',
             collection=TF_SUMMARIES)
 
@@ -408,15 +408,15 @@ class MultiClassifSegApplication(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -427,7 +427,7 @@ class MultiClassifSegApplication(BaseApplication):
             net_out_seg, net_out_class = self.net_multi(net_out,
                                                         self.is_training)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -444,20 +444,20 @@ class MultiClassifSegApplication(BaseApplication):
             data_loss_class = loss_func_class(
                 prediction=net_out_class,
                 ground_truth=data_dict.get('value', None))
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss_seg + data_loss_class + reg_loss
             else:
                 loss = data_loss_seg + data_loss_class
             self.total_loss = loss
-            self.total_loss = tf.Print(tf.cast(self.total_loss, tf.float32),
-                                       [loss, tf.shape(net_out_seg),
-                                        tf.shape(net_out_class)],
+            self.total_loss = tf.compat.v1.Print(tf.cast(self.total_loss, tf.float32),
+                                       [loss, tf.shape(input=net_out_seg),
+                                        tf.shape(input=net_out_class)],
                                        message='test')
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
@@ -481,7 +481,7 @@ class MultiClassifSegApplication(BaseApplication):
             net_out = self.net(image, **net_args)
             net_out_seg, net_out_class = self.net_multi(net_out,
                                                         self.is_training)
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'net_out.shape may need to be resized: %s', net_out.shape)
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes

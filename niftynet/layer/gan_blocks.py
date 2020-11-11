@@ -32,7 +32,7 @@ class GANImageBlock(TrainableLayer):
                                           conditioning,
                                           is_training)
         if self.clip:
-            with tf.name_scope('clip_real_images'):
+            with tf.compat.v1.name_scope('clip_real_images'):
                 training_image = tf.maximum(
                     -self.clip,
                     tf.minimum(self.clip, training_image))

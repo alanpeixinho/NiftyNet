@@ -62,7 +62,7 @@ class UpSampleLayer(TrainableLayer):
             pixel_num = np.prod(kernel_size_all_dims)
             repmat = np.hstack((pixel_num, [1] * spatial_rank, 1)).flatten()
             output_tensor = tf.tile(input=input_tensor, multiples=repmat)
-            output_tensor = tf.batch_to_space_nd(
+            output_tensor = tf.batch_to_space(
                 input=output_tensor,
                 block_shape=kernel_size_all_dims,
                 crops=[[0, 0]] * spatial_rank)

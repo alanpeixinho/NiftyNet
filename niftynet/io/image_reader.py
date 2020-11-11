@@ -121,7 +121,7 @@ class ImageReader(Layer):
             if not isinstance(task_param, dict):
                 task_param = vars(task_param)
         except ValueError:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "To concatenate multiple input data arrays,\n"
                 "task_param should be a dictionary in the form:\n"
                 "{'new_modality_name': ['modality_1', 'modality_2',...]}.")
@@ -135,7 +135,7 @@ class ImageReader(Layer):
         valid_names = [name for name in self.names
                        if task_param.get(name, None)]
         if not valid_names:
-            tf.logging.fatal("Reader requires task input keywords %s, but "
+            tf.compat.v1.logging.fatal("Reader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
                              self.names, list(task_param))
@@ -152,27 +152,27 @@ class ImageReader(Layer):
                 if (file_list is None) or \
                         (required not in list(file_list)) or \
                         (file_list[required].isnull().all()):
-                    tf.logging.fatal('Reader required input section '
+                    tf.compat.v1.logging.fatal('Reader required input section '
                                      'name [%s], but in the filename list '
                                      'the column is empty.', required)
                     raise ValueError
             except (AttributeError, TypeError, ValueError):
-                tf.logging.fatal(
+                tf.compat.v1.logging.fatal(
                     'file_list parameter should be a '
                     'pandas.DataFrame instance and has input '
                     'section name [%s] as a column name.', required)
                 if required_sections:
-                    tf.logging.fatal('Reader requires section(s): %s',
+                    tf.compat.v1.logging.fatal('Reader requires section(s): %s',
                                      required_sections)
                 if file_list is not None:
-                    tf.logging.fatal('Configuration input sections are: %s',
+                    tf.compat.v1.logging.fatal('Configuration input sections are: %s',
                                      list(file_list))
                 raise
 
         self.output_list, self._file_list = _filename_to_image_list(
             file_list, self._input_sources, data_param)
         for name in self.names:
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'Image reader: loading %d subjects '
                 'from sections %s as input [%s]',
                 len(self.output_list), self.input_sources[name], name)
@@ -259,7 +259,7 @@ class ImageReader(Layer):
         :return: integers of spatial rank
         """
         if not self.output_list:
-            tf.logging.fatal("Please initialise the reader first.")
+            tf.compat.v1.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         if not self._spatial_ranks:
             first_image = self.output_list[0]
@@ -284,7 +284,7 @@ class ImageReader(Layer):
                     but time and modality dimensions should be correct
         """
         if not self.output_list:
-            tf.logging.fatal("Please initialise the reader first.")
+            tf.compat.v1.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         if not self._shapes:
             first_image = self.output_list[0]
@@ -299,7 +299,7 @@ class ImageReader(Layer):
         (using the first image in the file list).
         """
         if not self.output_list:
-            tf.logging.fatal("Please initialise the reader first.")
+            tf.compat.v1.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         if not self._dtypes:
             first_image = self.output_list[0]
@@ -320,7 +320,7 @@ class ImageReader(Layer):
         section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
         if not self._input_sources:
-            tf.logging.fatal("Please initialise the reader first.")
+            tf.compat.v1.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         return self._input_sources
 
@@ -358,7 +358,7 @@ class ImageReader(Layer):
         try:
             return self._file_list.iloc[image_index][COLUMN_UNIQ_ID]
         except KeyError:
-            tf.logging.warning('Unknown subject id in reader file list.')
+            tf.compat.v1.logging.warning('Unknown subject id in reader file list.')
             raise
 
     def get_image_index(self, subject_id):
@@ -379,7 +379,7 @@ class ImageReader(Layer):
                 return self._file_list.iloc[:].to_dict()
             return self._file_list.iloc[image_index].to_dict()
         except (KeyError, AttributeError):
-            tf.logging.warning('Unknown subject id in reader file list.')
+            tf.compat.v1.logging.warning('Unknown subject id in reader file list.')
             raise
 
 
@@ -408,7 +408,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
             valid_idx.append(idx)
 
     if not volume_list:
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             "Empty filename lists, please check the csv "
             "files. (removing csv_file keyword if it is"
             " in the config file "
@@ -451,13 +451,13 @@ def _create_image(file_list, idx, modalities, data_param):
             loader.append(mod_spec.get('loader', None))
 
     except KeyError:
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             "Specified modality names %s "
             "not found in config: input sections %s.",
             modalities, list(data_param))
         raise
     except AttributeError:
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             "Data params must contain: interp_order, pixdim, axcodes.\n"
             "Reader must be initialised with a dataframe as file_list.")
         raise

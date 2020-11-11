@@ -42,7 +42,7 @@ class LinearInterpolateSampler(ImageWindowDataset):
         # only try to use the first spatial shape available
         image_spatial_shape = list(self.reader.shapes.values())[0][:3]
         self.window.set_spatial_shape(image_spatial_shape)
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             "initialised linear interpolation sampler %s ", self.window.shapes)
         assert not self.window.has_dynamic_shapes, \
             "dynamic shapes not supported, please specify " \

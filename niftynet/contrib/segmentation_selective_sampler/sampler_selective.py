@@ -42,7 +42,7 @@ class SelectiveSampler(UniformSampler):
         self.n_samples_rand = random_windows_per_image
         self.spatial_coordinates_generator = \
             self.selective_spatial_coordinates()
-        tf.logging.info('initialised selective sampling')
+        tf.compat.v1.logging.info('initialised selective sampling')
 
     def selective_spatial_coordinates(self):
         """
@@ -287,7 +287,7 @@ def rand_choice_coordinates(subject_id,
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) > 1:
-        tf.logging.fatal("Don't know how to generate sampling "
+        tf.compat.v1.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
                          "consistent. %s", uniq_spatial_size)

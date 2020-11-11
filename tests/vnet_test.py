@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.vnet import VNet
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -17,7 +17,7 @@ class VNetTest(NiftyNetTestCase):
         print(vnet_instance.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 160), out.shape)
 
@@ -31,7 +31,7 @@ class VNetTest(NiftyNetTestCase):
         print(vnet_instance.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)
 
@@ -42,14 +42,14 @@ class VNetTest(NiftyNetTestCase):
         # vnet_instance = VNet(num_classes=160)
         vnet_instance = VNet(
             num_classes=160,
-            w_regularizer=regularizers.l2_regularizer(0.4),
-            b_regularizer=regularizers.l2_regularizer(0.4))
+            w_regularizer=regularizers.L2(0.4),
+            b_regularizer=regularizers.L2(0.4))
         out = vnet_instance(x, is_training=True)
         print(vnet_instance.num_trainable_params())
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 160), out.shape)
 
@@ -60,15 +60,15 @@ class VNetTest(NiftyNetTestCase):
         # vnet_instance = VNet(num_classes=160)
         vnet_instance = VNet(
             num_classes=160,
-            w_regularizer=regularizers.l2_regularizer(0.4),
-            b_regularizer=regularizers.l2_regularizer(0.4))
+            w_regularizer=regularizers.L2(0.4),
+            b_regularizer=regularizers.L2(0.4))
         out = vnet_instance(x, is_training=True)
         print(vnet_instance.num_trainable_params())
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
         # print(vnet_instance.regularizer_loss())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)
 

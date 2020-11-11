@@ -144,7 +144,7 @@ class ImageWindow(object):
             image_shapes = nest.map_structure_up_to(
                 image_dtypes, tuple, image_shapes)
         except KeyError:
-            tf.logging.fatal('window_sizes wrong format %s', window_sizes)
+            tf.compat.v1.logging.fatal('window_sizes wrong format %s', window_sizes)
             raise
         # create ImageWindow instance
         window_instance = cls(shapes=image_shapes, dtypes=image_dtypes)
@@ -200,7 +200,7 @@ class ImageWindow(object):
                     spatial_shapes[name] = \
                         tuple(int(win_size) for win_size in win_sizes[name])
             except ValueError:
-                tf.logging.fatal("spatial window should be an array of int")
+                tf.compat.v1.logging.fatal("spatial window should be an array of int")
                 raise
 
         spatial_shapes = nest.map_structure_up_to(
@@ -247,7 +247,7 @@ class ImageWindow(object):
         try:
             return self._placeholders_dict[LOCATION_FORMAT.format(name)]
         except TypeError:
-            tf.logging.fatal('call placeholders_dict to initialise first')
+            tf.compat.v1.logging.fatal('call placeholders_dict to initialise first')
             raise
 
     def image_data_placeholder(self, name):
@@ -262,7 +262,7 @@ class ImageWindow(object):
         try:
             return self._placeholders_dict[name]
         except TypeError:
-            tf.logging.fatal('call placeholders_dict to initialise first')
+            tf.compat.v1.logging.fatal('call placeholders_dict to initialise first')
             raise
 
     def match_image_shapes(self, image_shapes):
@@ -301,12 +301,12 @@ class ImageWindow(object):
         try:
             self._placeholders_dict = {}
             for name in list(self.tf_dtypes):
-                self._placeholders_dict[name] = tf.placeholder(
+                self._placeholders_dict[name] = tf.compat.v1.placeholder(
                     dtype=self.tf_dtypes[name],
                     shape=self.shapes[name],
                     name=name)
         except TypeError:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'shape should be defined as dict of iterable %s', self.shapes)
             raise
 
@@ -364,7 +364,7 @@ def _read_window_sizes(input_mod_list, input_window_sizes):
         try:
             win_sizes = [int(win_size) for win_size in input_window_sizes]
         except ValueError:
-            tf.logging.fatal("spatial window should be an array of int")
+            tf.compat.v1.logging.fatal("spatial window should be an array of int")
             raise
         # single window size for all inputs
         for name in set(input_mod_list):

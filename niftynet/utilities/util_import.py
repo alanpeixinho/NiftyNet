@@ -25,7 +25,7 @@ def require_module(name,
     """
 
     name = '{}'.format(name)
-    log_level = tf.logging.fatal if mandatory else tf.logging.info
+    log_level = tf.compat.v1.logging.fatal if mandatory else tf.compat.v1.logging.info
 
     try:
         the_module = importlib.import_module(name)

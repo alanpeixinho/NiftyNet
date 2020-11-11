@@ -39,7 +39,7 @@ def _transpose(data):
     perm += list(range(nof_dims + 1, len(data.shape)))
     assert len(perm) == len(data.shape)
 
-    return tf.transpose(data, perm)
+    return tf.transpose(a=data, perm=perm)
 
 
 @ops.RegisterGradient("NiftyregImageResampling")
@@ -68,7 +68,7 @@ def _niftyreg_resampling_grad(op, grad):
 
             chained_grads.append(tf.multiply(mod_grad, out_grad))
 
-        chained_grad = tf.reduce_sum(tf.stack(chained_grads, axis=0), axis=0)
+        chained_grad = tf.reduce_sum(input_tensor=tf.stack(chained_grads, axis=0), axis=0)
 
     else:
         grad_rep = tf.tile(grad, [1] + [grad_op.shape[1]]

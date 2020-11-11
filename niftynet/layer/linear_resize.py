@@ -43,7 +43,7 @@ class LinearResizeLayer(Layer):
         self.new_size = expand_spatial_params(self.new_size, input_spatial_rank)
 
         if input_spatial_rank == 2:
-            return tf.image.resize_bilinear(input_tensor, self.new_size)
+            return tf.image.resize(input_tensor, self.new_size, method=tf.image.ResizeMethod.BILINEAR)
 
         b_size, x_size, y_size, z_size, c_size = \
             input_tensor.shape.as_list()
@@ -57,21 +57,21 @@ class LinearResizeLayer(Layer):
         # resize y-z
         squeeze_b_x = tf.reshape(
             input_tensor, [-1, y_size, z_size, c_size])
-        resize_b_x = tf.image.resize_bilinear(
-            squeeze_b_x, [y_size_new, z_size_new])
+        resize_b_x = tf.image.resize(
+            squeeze_b_x, [y_size_new, z_size_new], method=tf.image.ResizeMethod.BILINEAR)
         resume_b_x = tf.reshape(
             resize_b_x, [b_size, x_size, y_size_new, z_size_new, c_size])
 
         # resize x
         #   first reorient
-        reoriented = tf.transpose(resume_b_x, [0, 3, 2, 1, 4])
+        reoriented = tf.transpose(a=resume_b_x, perm=[0, 3, 2, 1, 4])
         #   squeeze and 2d resize
         squeeze_b_z = tf.reshape(
             reoriented, [-1, y_size_new, x_size, c_size])
-        resize_b_z = tf.image.resize_bilinear(
-            squeeze_b_z, [y_size_new, x_size_new])
+        resize_b_z = tf.image.resize(
+            squeeze_b_z, [y_size_new, x_size_new], method=tf.image.ResizeMethod.BILINEAR)
         resume_b_z = tf.reshape(
             resize_b_z, [b_size, z_size_new, y_size_new, x_size_new, c_size])
 
-        output_tensor = tf.transpose(resume_b_z, [0, 3, 2, 1, 4])
+        output_tensor = tf.transpose(a=resume_b_z, perm=[0, 3, 2, 1, 4])
         return output_tensor

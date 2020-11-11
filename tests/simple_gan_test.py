@@ -4,7 +4,7 @@ import unittest
 
 import os
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.simple_gan import SimpleGAN
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -20,7 +20,7 @@ class SimpleGANTest(NiftyNetTestCase):
         out = simple_gan_instance(r, x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)
             self.assertAllClose((2, 1), out[1].shape)
@@ -36,7 +36,7 @@ class SimpleGANTest(NiftyNetTestCase):
         out = simple_gan_instance(r, x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)
             self.assertAllClose((2, 1), out[1].shape)

@@ -51,7 +51,7 @@ class ClassificationApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         super(ClassificationApplication, self).__init__()
-        tf.logging.info('starting classification application')
+        tf.compat.v1.logging.info('starting classification application')
         self.action = action
 
         self.net_param = net_param
@@ -77,7 +77,7 @@ class ClassificationApplication(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -196,13 +196,13 @@ class ClassificationApplication(BaseApplication):
         reg_type = self.net_param.reg_type.lower()
         decay = self.net_param.decay
         if reg_type == 'l2' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l2_regularizer(decay)
-            b_regularizer = regularizers.l2_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L2(decay)
+            b_regularizer = regularizers.L2(decay)
         elif reg_type == 'l1' and decay > 0:
-            from tensorflow.contrib.layers.python.layers import regularizers
-            w_regularizer = regularizers.l1_regularizer(decay)
-            b_regularizer = regularizers.l1_regularizer(decay)
+            from tensorflow.keras import regularizers
+            w_regularizer = regularizers.L1(decay)
+            b_regularizer = regularizers.L1(decay)
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=self.classification_param.num_classes,
@@ -221,10 +221,10 @@ class ClassificationApplication(BaseApplication):
         """ This method defines several monitoring metrics that
         are derived from the confusion matrix """
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
-        prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
+        prediction = tf.reshape(tf.argmax(input=net_out, axis=-1), [-1])
         num_classes = self.classification_param.num_classes
-        conf_mat = tf.contrib.metrics.confusion_matrix(labels, prediction, num_classes)
-        conf_mat = tf.to_float(conf_mat)
+        conf_mat = tf.math.confusion_matrix(labels, prediction, num_classes)
+        conf_mat = tf.cast(conf_mat, dtype=tf.float32)
         if self.classification_param.num_classes == 2:
             outputs_collector.add_to_collection(
                 var=conf_mat[1][1], name='true_positives',
@@ -250,7 +250,7 @@ class ClassificationApplication(BaseApplication):
                 collection=TF_SUMMARIES)
 
         outputs_collector.add_to_collection(
-            var=tf.trace(conf_mat), name='accuracy',
+            var=tf.linalg.trace(conf_mat), name='accuracy',
             average_over_devices=True, summary_type='scalar',
             collection=TF_SUMMARIES)
 
@@ -260,7 +260,7 @@ class ClassificationApplication(BaseApplication):
                                  gradients_collector=None):
 
         def switch_sampler(for_training):
-            with tf.name_scope('train' if for_training else 'validation'):
+            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
@@ -268,9 +268,9 @@ class ClassificationApplication(BaseApplication):
             self.patience = self.action_param.patience
             self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -279,7 +279,7 @@ class ClassificationApplication(BaseApplication):
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
@@ -290,10 +290,10 @@ class ClassificationApplication(BaseApplication):
             data_loss = loss_func(
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None))
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
-                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    input_tensor=[tf.reduce_mean(input_tensor=reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
@@ -301,7 +301,7 @@ class ClassificationApplication(BaseApplication):
             self.total_loss = loss
 
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss)
 
             outputs_collector.add_to_collection(
                 var=self.total_loss, name='total_loss',
@@ -331,7 +331,7 @@ class ClassificationApplication(BaseApplication):
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'net_out.shape may need to be resized: %s', net_out.shape)
             output_prob = self.classification_param.output_prob
             num_classes = self.classification_param.num_classes

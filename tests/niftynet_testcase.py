@@ -7,10 +7,10 @@ import tensorflow as tf
 # https://github.com/NifTK/NiftyNet/issues/381
 # https://github.com/tensorflow/tensorflow/issues/29439
 
-try:
-    delattr(tf.test.TestCase,'test_session')
-except AttributeError:
-    pass
+#try:
+#    delattr(tf.test.TestCase,'test_session')
+#except AttributeError:
+#    pass
 
 
 class NiftyNetTestCase(tf.test.TestCase):

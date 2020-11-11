@@ -33,14 +33,14 @@ class ApplyGradients(object):
         :param _unused:
         :return:
         """
-        with tf.name_scope('ApplyGradients'):
+        with tf.compat.v1.name_scope('ApplyGradients'):
             gradients = sender.gradients_collector.gradients
-            bn_ops = tf.get_collection(BN_COLLECTION, PRIMARY_NAME_SCOPE)
+            bn_ops = tf.compat.v1.get_collection(BN_COLLECTION, PRIMARY_NAME_SCOPE)
             if not bn_ops:
                 sender.gradient_op = _apply_multiopt_gradients(
                     sender.optimiser, gradients)
             else:
-                with tf.get_default_graph().control_dependencies(bn_ops):
+                with tf.compat.v1.get_default_graph().control_dependencies(bn_ops):
                     sender.gradient_op = _apply_multiopt_gradients(
                         sender.optimiser, gradients)
 
@@ -77,7 +77,7 @@ def _apply_multiopt_gradients(optimiser, gradients):
             optimiser_k = optimiser.get(key) \
                 if isinstance(optimiser, dict) else optimiser
             if not optimiser_k:
-                tf.logging.fatal('No optimizer found for %s', key)
+                tf.compat.v1.logging.fatal('No optimizer found for %s', key)
                 raise ValueError
             ret.append(_apply_gradients(optimiser_k, gradients[key]))
         return ret

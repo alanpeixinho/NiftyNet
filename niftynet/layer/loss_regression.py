@@ -75,7 +75,7 @@ class LossFunction(Layer):
                         weight_map_b = None
                     else:
                         pred_b, ground_truth_b, weight_map_b = args[0]
-                    pred_b = tf.reshape(pred_b, tf.shape(ground_truth_b))
+                    pred_b = tf.reshape(pred_b, tf.shape(input=ground_truth_b))
                     # pred_b = tf.reshape(pred_b, [-1])
                     # pred_b = tf.Print(tf.cast(pred_b, tf.float32),
                     #                       [tf.shape(
@@ -91,7 +91,7 @@ class LossFunction(Layer):
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
-                    return tf.to_float(self._data_loss_func(**loss_params))
+                    return tf.cast(self._data_loss_func(**loss_params), dtype=tf.float32)
 
                 if weight_map is not None:
                     elements = (pred, ground_truth, weight_map)
@@ -103,8 +103,8 @@ class LossFunction(Layer):
                     elems=elements,
                     dtype=tf.float32,
                     parallel_iterations=1)
-                data_loss.append(tf.reduce_mean(loss_batch))
-            return tf.reduce_mean(data_loss)
+                data_loss.append(tf.reduce_mean(input_tensor=loss_batch))
+            return tf.reduce_mean(input_tensor=data_loss)
 
 def l1_loss(prediction, ground_truth, weight_map=None):
     """
@@ -116,11 +116,11 @@ def l1_loss(prediction, ground_truth, weight_map=None):
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
     if weight_map is not None:
         absolute_residuals = tf.multiply(absolute_residuals, weight_map)
-        sum_residuals = tf.reduce_sum(absolute_residuals)
-        sum_weights = tf.reduce_sum(weight_map)
+        sum_residuals = tf.reduce_sum(input_tensor=absolute_residuals)
+        sum_weights = tf.reduce_sum(input_tensor=weight_map)
     else:
-        sum_residuals = tf.reduce_sum(absolute_residuals)
-        sum_weights = tf.size(absolute_residuals)
+        sum_residuals = tf.reduce_sum(input_tensor=absolute_residuals)
+        sum_weights = tf.size(input=absolute_residuals)
     return tf.truediv(tf.cast(sum_residuals, dtype=tf.float32),
                       tf.cast(sum_weights, dtype=tf.float32))
 
@@ -135,7 +135,7 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     residuals = tf.subtract(prediction, ground_truth)
     if weight_map is not None:
         residuals = \
-            tf.multiply(residuals, weight_map) / tf.reduce_sum(weight_map)
+            tf.multiply(residuals, weight_map) / tf.reduce_sum(input_tensor=weight_map)
     return tf.nn.l2_loss(residuals)
 
 
@@ -150,9 +150,9 @@ def rmse_loss(prediction, ground_truth, weight_map=None):
         residuals = tf.subtract(prediction, ground_truth)
         residuals = tf.multiply(residuals, residuals)
         residuals = tf.multiply(residuals, weight_map)
-        return tf.sqrt(tf.reduce_mean(residuals) / tf.reduce_mean(weight_map))
+        return tf.sqrt(tf.reduce_mean(input_tensor=residuals) / tf.reduce_mean(input_tensor=weight_map))
     else:
-        return tf.sqrt(tf.losses.mean_squared_error(prediction, ground_truth))
+        return tf.sqrt(tf.compat.v1.losses.mean_squared_error(prediction, ground_truth))
 
 
 def mae_loss(prediction, ground_truth, weight_map=None):
@@ -166,9 +166,9 @@ def mae_loss(prediction, ground_truth, weight_map=None):
         residuals = tf.subtract(prediction, ground_truth)
         residuals = tf.abs(residuals)
         residuals = tf.multiply(residuals, weight_map)
-        return tf.reduce_mean(residuals) / tf.reduce_mean(weight_map)
+        return tf.reduce_mean(input_tensor=residuals) / tf.reduce_mean(input_tensor=weight_map)
     else:
-        return tf.reduce_mean(tf.abs(tf.subtract(prediction, ground_truth)))
+        return tf.reduce_mean(input_tensor=tf.abs(tf.subtract(prediction, ground_truth)))
 
 
 def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
@@ -187,15 +187,15 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
     quadratic_residual = 0.5 * absolute_residuals ** 2
     linear_residual = delta * (absolute_residuals - delta / 2)
 
-    voxelwise_loss = tf.where(residual_is_outside_delta,
+    voxelwise_loss = tf.compat.v1.where(residual_is_outside_delta,
                               linear_residual,
                               quadratic_residual)
     if weight_map is not None:
         voxelwise_loss = tf.multiply(voxelwise_loss, weight_map)
-        sum_weights = tf.reduce_sum(weight_map)
+        sum_weights = tf.reduce_sum(input_tensor=weight_map)
     else:
-        sum_weights = tf.to_float(tf.size(absolute_residuals))
-    sum_loss = tf.reduce_sum(voxelwise_loss)
+        sum_weights = tf.cast(tf.size(input=absolute_residuals), dtype=tf.float32)
+    sum_loss = tf.reduce_sum(input_tensor=voxelwise_loss)
     return tf.truediv(sum_loss, sum_weights)
 
 
@@ -227,24 +227,24 @@ def smooth_l1_loss(prediction, ground_truth, weight_map=None, value_thresh=0.5):
                                                              ground_truth)),
                                  dtype=tf.float32)
 
-    absolute_residuals = tf.where(absolute_residuals < value_thresh,
+    absolute_residuals = tf.compat.v1.where(absolute_residuals < value_thresh,
                                   value_thresh *
                                            tf.square(absolute_residuals),
                                            absolute_residuals + value_correction)
 
-    absolute_residuals = tf.where(tf.greater(absolute_residuals,value_thresh_max),
+    absolute_residuals = tf.compat.v1.where(tf.greater(absolute_residuals,value_thresh_max),
                                   tf.square(
         absolute_residuals) + value_correction_max, absolute_residuals)
     if weight_map is not None:
 
         absolute_residuals = tf.multiply(absolute_residuals, weight_map)
-        sum_residuals = tf.reduce_sum(absolute_residuals)
+        sum_residuals = tf.reduce_sum(input_tensor=absolute_residuals)
 
-        sum_weights = tf.reduce_sum(weight_map)
+        sum_weights = tf.reduce_sum(input_tensor=weight_map)
 
     else:
-        sum_residuals = tf.reduce_sum(absolute_residuals)
-        sum_weights = tf.size(absolute_residuals)
+        sum_residuals = tf.reduce_sum(input_tensor=absolute_residuals)
+        sum_weights = tf.size(input=absolute_residuals)
     return tf.truediv(tf.cast(sum_residuals, dtype=tf.float32),
                       tf.cast(sum_weights, dtype=tf.float32))
 
@@ -261,11 +261,11 @@ def cosine_loss(prediction, ground_truth, weight_map=None, to_complete=True):
     '''
     if to_complete:
         prediction_complete = tf.reshape(tf.sqrt(1 - tf.minimum(tf.reduce_sum(
-            tf.square(
-            prediction),-1),1)), [tf.shape(prediction)[0],1])
+            input_tensor=tf.square(
+            prediction),axis=-1),1)), [tf.shape(input=prediction)[0],1])
         ground_truth_complete = tf.reshape(tf.sqrt(1 - tf.minimum(tf.reduce_sum(
-            tf.square(
-            ground_truth),-1),1)),[tf.shape(prediction)[0],1])
+            input_tensor=tf.square(
+            ground_truth),axis=-1),1)),[tf.shape(input=prediction)[0],1])
 
         pred_vect = tf.concat([prediction, prediction_complete], -1)
 
@@ -275,16 +275,16 @@ def cosine_loss(prediction, ground_truth, weight_map=None, to_complete=True):
         gt_vect = ground_truth
 
     if weight_map is None:
-        weight_map = tf.ones([tf.shape(prediction)[0]])
+        weight_map = tf.ones([tf.shape(input=prediction)[0]])
     else:
-        weight_map = tf.reshape(weight_map, [tf.shape(prediction)[0]])
+        weight_map = tf.reshape(weight_map, [tf.shape(input=prediction)[0]])
 
     pred_vect = pred_vect / tf.maximum(tf.norm(
-        pred_vect,ord='euclidean',axis=-1, keep_dims=True), 0.00001)
+        tensor=pred_vect,ord='euclidean',axis=-1, keepdims=True), 0.00001)
     gt_vect = gt_vect /tf.maximum(tf.norm(
-        gt_vect,ord='euclidean',axis=-1, keep_dims=True), 0.00001)
-    loss_init = 1 -tf.reduce_sum(gt_vect * pred_vect, -1)
+        tensor=gt_vect,ord='euclidean',axis=-1, keepdims=True), 0.00001)
+    loss_init = 1 -tf.reduce_sum(input_tensor=gt_vect * pred_vect, axis=-1)
     weighted_loss = loss_init * weight_map
-    loss = tf.reduce_sum(weighted_loss) / tf.reduce_sum(weight_map)
+    loss = tf.reduce_sum(input_tensor=weighted_loss) / tf.reduce_sum(input_tensor=weight_map)
 
     return loss

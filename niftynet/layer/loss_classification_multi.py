@@ -118,10 +118,10 @@ class LossFunction(Layer):
                             pred, pred_mul))
 
             if weight_batch is not None:
-                return tf.reduce_mean(weight_batch/tf.reduce_sum(
-                    weight_batch) * data_loss[0])
+                return tf.reduce_mean(input_tensor=weight_batch/tf.reduce_sum(
+                    input_tensor=weight_batch) * data_loss[0])
             else:
-                return tf.reduce_mean(data_loss)
+                return tf.reduce_mean(input_tensor=data_loss)
 
 #
 def labels_to_one_hot(ground_truth, num_classes=1):
@@ -137,10 +137,10 @@ def labels_to_one_hot(ground_truth, num_classes=1):
     """
     # read input/output shapes
     if isinstance(num_classes, tf.Tensor):
-        num_classes_tf = tf.to_int32(num_classes)
+        num_classes_tf = tf.cast(num_classes, dtype=tf.int32)
     else:
         num_classes_tf = tf.constant(num_classes, tf.int32)
-    input_shape = tf.shape(ground_truth)
+    input_shape = tf.shape(input=ground_truth)
     output_shape = tf.concat(
         [input_shape, tf.reshape(num_classes_tf, (1,))], 0)
 
@@ -153,21 +153,21 @@ def labels_to_one_hot(ground_truth, num_classes=1):
 
     ground_truth = tf.reshape(ground_truth, (-1,))
     # shape of squeezed output
-    dense_shape = tf.stack([tf.shape(ground_truth)[0],
+    dense_shape = tf.stack([tf.shape(input=ground_truth)[0],
                             num_classes_tf], 0)
-    dense_shape = tf.Print(tf.cast(dense_shape, tf.int64), [dense_shape,
+    dense_shape = tf.compat.v1.Print(tf.cast(dense_shape, tf.int64), [dense_shape,
                            output_shape], message='check_shape_lohe')
     # create a rank-2 sparse tensor
-    ground_truth = tf.to_int64(ground_truth)
-    ids = tf.range(tf.to_int64(tf.shape(ground_truth)[0]), dtype=tf.int64)
+    ground_truth = tf.cast(ground_truth, dtype=tf.int64)
+    ids = tf.range(tf.cast(tf.shape(input=ground_truth)[0], dtype=tf.int64), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(
         indices=ids,
         values=tf.ones_like(ground_truth, dtype=tf.float32),
-        dense_shape=tf.to_int64(dense_shape))
+        dense_shape=tf.cast(dense_shape, dtype=tf.int64))
 
     # resume the spatial dims
-    one_hot = tf.sparse_reshape(one_hot, output_shape)
+    one_hot = tf.sparse.reshape(one_hot, output_shape)
     return one_hot, output_shape
 
 
@@ -184,81 +184,81 @@ def loss_confusion_matrix(ground_truth, pred_multi, num_classes=2, nrater=6):
     '''
 
     one_hot_gt, output_shape = labels_to_one_hot(ground_truth, num_classes)
-    dense_one_hot = tf.reshape(tf.sparse_tensor_to_dense(one_hot_gt),
+    dense_one_hot = tf.reshape(tf.sparse.to_dense(one_hot_gt),
                                output_shape)
-    dense_one_hot = tf.reshape(dense_one_hot, tf.shape(pred_multi))
-    nclasses=tf.shape(pred_multi)[-1]
+    dense_one_hot = tf.reshape(dense_one_hot, tf.shape(input=pred_multi))
+    nclasses=tf.shape(input=pred_multi)[-1]
     nn_pred = tf.nn.softmax(pred_multi,-1)
     error_fin = tf.zeros([nclasses, nclasses])
-    error_fin = tf.Print(tf.cast(error_fin, tf.float32), [nn_pred, tf.shape(
-        pred_multi)], message='error')
-    nn_pred = tf.Print(tf.cast(nn_pred, tf.float32), [tf.shape(
-        dense_one_hot), nclasses, tf.shape(ground_truth), tf.shape(nn_pred)],
+    error_fin = tf.compat.v1.Print(tf.cast(error_fin, tf.float32), [nn_pred, tf.shape(
+        input=pred_multi)], message='error')
+    nn_pred = tf.compat.v1.Print(tf.cast(nn_pred, tf.float32), [tf.shape(
+        input=dense_one_hot), nclasses, tf.shape(input=ground_truth), tf.shape(input=nn_pred)],
                        message='check_conf')
     for i in range(0, nrater):
         for j in range(i+1, nrater):
 
-            confusion_pred = tf.matmul(tf.transpose(nn_pred[:, i, :]),
+            confusion_pred = tf.matmul(tf.transpose(a=nn_pred[:, i, :]),
                                        nn_pred[:, j, :])
-            confusion_gt = tf.matmul(tf.transpose(dense_one_hot[:, i, :]),
+            confusion_gt = tf.matmul(tf.transpose(a=dense_one_hot[:, i, :]),
                                      dense_one_hot[:, j, :])
             error = tf.divide(tf.abs(confusion_gt - confusion_pred), tf.cast(
-                tf.shape(ground_truth)[0], tf.float32))
+                tf.shape(input=ground_truth)[0], tf.float32))
             error_fin += error
-            error_fin = tf.Print(tf.cast(error,tf.float32), [tf.reduce_sum(
-                error_fin), tf.reduce_max(error_fin)], message='build_error')
-    return tf.reduce_sum(error_fin)/tf.cast(nrater, tf.float32)
+            error_fin = tf.compat.v1.Print(tf.cast(error,tf.float32), [tf.reduce_sum(
+                input_tensor=error_fin), tf.reduce_max(input_tensor=error_fin)], message='build_error')
+    return tf.reduce_sum(input_tensor=error_fin)/tf.cast(nrater, tf.float32)
 
 
 def variability(pred_multi, num_classes=2, nrater=2):
     one_hot_gt, output_shape = labels_to_one_hot(tf.cast(pred_multi, tf.int64),
                                            num_classes)
-    dense_one_hot = tf.sparse_tensor_to_dense(one_hot_gt)
-    freq = tf.divide(tf.reduce_sum(dense_one_hot, 1), tf.cast(tf.shape(
-        pred_multi)[1],tf.float32))
-    variability = tf.reduce_sum(tf.square(freq), -1)
+    dense_one_hot = tf.sparse.to_dense(one_hot_gt)
+    freq = tf.divide(tf.reduce_sum(input_tensor=dense_one_hot, axis=1), tf.cast(tf.shape(
+        input=pred_multi)[1],tf.float32))
+    variability = tf.reduce_sum(input_tensor=tf.square(freq), axis=-1)
     return 1 - variability
 
 
 def loss_variability(ground_truth, pred_multi, weight_map=None):
     one_hot_gt, output_shape = labels_to_one_hot(tf.cast(ground_truth,
                                                          tf.int64),
-                                   tf.shape(pred_multi)[-1])
-    dense_gt = tf.sparse_tensor_to_dense(one_hot_gt)
-    pred_hard = tf.argmax(pred_multi, -1)
+                                   tf.shape(input=pred_multi)[-1])
+    dense_gt = tf.sparse.to_dense(one_hot_gt)
+    pred_hard = tf.argmax(input=pred_multi, axis=-1)
 
     one_hot_pred, _ = labels_to_one_hot(tf.cast(pred_hard, tf.int64),
-                                   tf.shape(pred_multi)[-1])
-    dense_pred = tf.sparse_tensor_to_dense(one_hot_pred)
-    freq_pred = tf.divide(tf.reduce_sum(dense_pred, 1),
-                          tf.cast(tf.shape(pred_multi)[1],tf.float32))
-    variability_pred = tf.reduce_sum(tf.square(freq_pred), -1)
-    freq_gt = tf.divide(tf.reduce_sum(dense_gt, 1),
-                        tf.cast(tf.shape(pred_multi)[1],tf.float32))
-    variability_gt = tf.reduce_sum(tf.square(freq_gt), -1)
+                                   tf.shape(input=pred_multi)[-1])
+    dense_pred = tf.sparse.to_dense(one_hot_pred)
+    freq_pred = tf.divide(tf.reduce_sum(input_tensor=dense_pred, axis=1),
+                          tf.cast(tf.shape(input=pred_multi)[1],tf.float32))
+    variability_pred = tf.reduce_sum(input_tensor=tf.square(freq_pred), axis=-1)
+    freq_gt = tf.divide(tf.reduce_sum(input_tensor=dense_gt, axis=1),
+                        tf.cast(tf.shape(input=pred_multi)[1],tf.float32))
+    variability_gt = tf.reduce_sum(input_tensor=tf.square(freq_gt), axis=-1)
 
     diff_square = tf.square(variability_gt-variability_pred)
     if weight_map is not None:
         diff_square = weight_map * diff_square
-    loss = tf.sqrt(tf.reduce_mean(diff_square))
+    loss = tf.sqrt(tf.reduce_mean(input_tensor=diff_square))
     return loss
 
 
 def rmse_consistency(pred_ave,
                      pred_multi, weight_map=None):
     pred_multi  = tf.nn.softmax(pred_multi, -1)
-    pred_multi_ave = tf.reduce_mean(pred_multi, axis=1)
-    pred_multi_ave = tf.Print(tf.cast(pred_multi_ave, tf.float32), [pred_ave[0],
+    pred_multi_ave = tf.reduce_mean(input_tensor=pred_multi, axis=1)
+    pred_multi_ave = tf.compat.v1.Print(tf.cast(pred_multi_ave, tf.float32), [pred_ave[0],
                                                         pred_multi_ave[0],
                                                                     tf.shape(
-                                                                        pred_ave), tf.shape(pred_multi_ave),
-                              tf.reduce_max(pred_ave-pred_multi_ave)],
+                                                                        input=pred_ave), tf.shape(input=pred_multi_ave),
+                              tf.reduce_max(input_tensor=pred_ave-pred_multi_ave)],
                               message='rmse_test')
     diff_square = tf.square(pred_ave-pred_multi_ave)
     if weight_map is not None:
         diff_square = tf.multiply(weight_map, diff_square) / tf.reduce_sum(
-            weight_map)
+            input_tensor=weight_map)
 
-    return tf.sqrt(tf.reduce_mean(diff_square))
+    return tf.sqrt(tf.reduce_mean(input_tensor=diff_square))
 
 

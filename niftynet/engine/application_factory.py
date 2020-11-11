@@ -276,11 +276,11 @@ def select_module(module_name, type_str, lookup_table=None):
         the_class = getattr(the_module, class_name)
         if is_external:
             # print location of external module
-            tf.logging.info('Import [%s] from %s.',
+            tf.compat.v1.logging.info('Import [%s] from %s.',
                             class_name, os.path.abspath(the_module.__file__))
         return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
-        tf.logging.fatal(repr(not_imported))
+        tf.compat.v1.logging.fatal(repr(not_imported))
         if '.' not in module_name:
             err = 'Could not import {}: ' \
                   'Incorrect module name "{}"; ' \
@@ -288,7 +288,7 @@ def select_module(module_name, type_str, lookup_table=None):
         else:
             err = '{}: Could not import object' \
                   '"{}" from "{}"'.format(type_str, class_name, module_str)
-        tf.logging.fatal(err)
+        tf.compat.v1.logging.fatal(err)
 
         if not lookup_table:
             # no further guess
@@ -301,7 +301,7 @@ def select_module(module_name, type_str, lookup_table=None):
             err = 'Could not import {2}: By "{0}", ' \
                   'did you mean "{1}"?\n "{0}" is ' \
                   'not a valid option. '.format(module_name, closest, type_str)
-            tf.logging.fatal(err)
+            tf.compat.v1.logging.fatal(err)
         raise ValueError(err)
 
 

@@ -67,7 +67,7 @@ class CSVReader(Layer):
             if not isinstance(task_param, dict):
                 task_param = vars(task_param)
         except ValueError:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 "To concatenate multiple input data arrays,\n"
                 "task_param should be a dictionary in the form:\n"
                 "{'new_modality_name': ['modality_1', 'modality_2',...]}.")
@@ -76,7 +76,7 @@ class CSVReader(Layer):
         valid_names = [name for name in self.names if self.task_param.get(
             name, None)]
         if not valid_names:
-            tf.logging.fatal("CSVReader requires task input keywords %s, but "
+            tf.compat.v1.logging.fatal("CSVReader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
                              self.names, list(self.task_param))
@@ -119,7 +119,7 @@ class CSVReader(Layer):
         return self
     
     def _parse_csv(self, path_to_csv, to_ohe):
-        tf.logging.warning('This method will read your entire csv into memory')
+        tf.compat.v1.logging.warning('This method will read your entire csv into memory')
         df_init = pd.read_csv(path_to_csv, index_col=0, header=None)
 
         df_init.index = df_init.index.map(str)
@@ -133,7 +133,7 @@ class CSVReader(Layer):
 
             if set(df_fin.index) != set(self.subject_ids):
                 print(set(self.subject_ids) - set(df_fin.index))
-                tf.logging.fatal('csv file provided at: {} does not have '
+                tf.compat.v1.logging.fatal('csv file provided at: {} does not have '
                                  'all the subject_ids'.format(path_to_csv))
                 raise Exception
         else:
@@ -151,7 +151,7 @@ class CSVReader(Layer):
             _dims = len(df_fin.columns)
             _indexable_output = list(df_fin.values)
             return df_fin, _indexable_output, _dims
-        tf.logging.fatal('Unrecognised input format for {}'.format(path_to_csv))
+        tf.compat.v1.logging.fatal('Unrecognised input format for {}'.format(path_to_csv))
         raise Exception('Unrecognised input format for {}'.format(path_to_csv))
 
     @staticmethod

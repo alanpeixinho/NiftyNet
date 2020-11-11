@@ -72,7 +72,7 @@ uniform_sampler = UniformSampler(
     reader, spatial_window_size, windows_per_image=100)
 next_window = uniform_sampler.pop_batch_op()
 coords = []
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
     for _ in range(20):
         uniform_windows = sess.run(next_window)
         coords.append(uniform_windows['MR_location'])
@@ -86,7 +86,7 @@ grid_sampler = GridSampler(
     reader, spatial_window_size, window_border=border)
 next_grid = grid_sampler.pop_batch_op()
 coords = []
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
     while True:
         window = sess.run(next_grid)
         if window['MR_location'][0, 0] == -1:

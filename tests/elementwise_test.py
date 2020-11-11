@@ -35,7 +35,7 @@ class ElementwiseTest(tf.test.TestCase):
         out_sum_4 = sum_layer(x_1, x_2)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_sum_1)
             self.assertAllClose((2, 16, 16, 16, 6), out.shape)
             out = sess.run(out_sum_2)
@@ -75,7 +75,7 @@ class ElementwiseTest(tf.test.TestCase):
         out_sum_4 = sum_layer(x_1, x_2)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out_sum_1)
             self.assertAllClose((2, 16, 16, 6), out.shape)
             out = sess.run(out_sum_2)

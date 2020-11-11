@@ -46,7 +46,7 @@ class LossFunction(Layer):
         data_loss_function_name = self._data_loss_func.__name__
         if data_loss_function_name.startswith('cross_entropy') \
                 or 'xent' in data_loss_function_name:
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 'Cross entropy loss function calls '
                 'tf.nn.sparse_softmax_cross_entropy_with_logits '
                 'which always performs a softmax internally.')
@@ -108,7 +108,7 @@ class LossFunction(Layer):
                     # becomes: (n_voxels,)
                     if not pred_b.shape.is_fully_defined():
                         ref_shape = tf.stack(
-                            [tf.shape(pred_b)[0], tf.constant(-1)], 0)
+                            [tf.shape(input=pred_b)[0], tf.constant(-1)], 0)
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
@@ -132,7 +132,7 @@ class LossFunction(Layer):
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
-                    return tf.to_float(self._data_loss_func(**loss_params))
+                    return tf.cast(self._data_loss_func(**loss_params), dtype=tf.float32)
 
                 if weight_map is not None:
                     elements = (pred, ground_truth, weight_map)
@@ -146,9 +146,9 @@ class LossFunction(Layer):
                     parallel_iterations=1)
 
                 # loss averaged over batch
-                data_loss.append(tf.reduce_mean(loss_batch))
+                data_loss.append(tf.reduce_mean(input_tensor=loss_batch))
             # loss averaged over multiple scales
-            return tf.reduce_mean(data_loss)
+            return tf.reduce_mean(input_tensor=data_loss)
 
 
 def labels_to_one_hot(ground_truth, num_classes=1):
@@ -164,10 +164,10 @@ def labels_to_one_hot(ground_truth, num_classes=1):
     """
     # read input/output shapes
     if isinstance(num_classes, tf.Tensor):
-        num_classes_tf = tf.to_int32(num_classes)
+        num_classes_tf = tf.cast(num_classes, dtype=tf.int32)
     else:
         num_classes_tf = tf.constant(num_classes, tf.int32)
-    input_shape = tf.shape(ground_truth)
+    input_shape = tf.shape(input=ground_truth)
     output_shape = tf.concat(
         [input_shape, tf.reshape(num_classes_tf, (1,))], 0)
 
@@ -178,19 +178,19 @@ def labels_to_one_hot(ground_truth, num_classes=1):
     # squeeze the spatial shape
     ground_truth = tf.reshape(ground_truth, (-1,))
     # shape of squeezed output
-    dense_shape = tf.stack([tf.shape(ground_truth)[0], num_classes_tf], 0)
+    dense_shape = tf.stack([tf.shape(input=ground_truth)[0], num_classes_tf], 0)
 
     # create a rank-2 sparse tensor
-    ground_truth = tf.to_int64(ground_truth)
-    ids = tf.range(tf.to_int64(dense_shape[0]), dtype=tf.int64)
+    ground_truth = tf.cast(ground_truth, dtype=tf.int64)
+    ids = tf.range(tf.cast(dense_shape[0], dtype=tf.int64), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(
         indices=ids,
         values=tf.ones_like(ground_truth, dtype=tf.float32),
-        dense_shape=tf.to_int64(dense_shape))
+        dense_shape=tf.cast(dense_shape, dtype=tf.int64))
 
     # resume the spatial dims
-    one_hot = tf.sparse_reshape(one_hot, output_shape)
+    one_hot = tf.sparse.reshape(one_hot, output_shape)
     return one_hot
 
 
@@ -202,17 +202,17 @@ def undecided_loss(prediction, ground_truth, weight_map=None):
     :param weight_map:
     :return:
     """
-    ratio_undecided = 1.0/tf.cast(tf.shape(prediction)[-1], tf.float32)
-    res_undecided = tf.reciprocal(tf.reduce_mean(tf.abs(prediction -
-                                                 ratio_undecided), -1) + 0.0001)
+    ratio_undecided = 1.0/tf.cast(tf.shape(input=prediction)[-1], tf.float32)
+    res_undecided = tf.math.reciprocal(tf.reduce_mean(input_tensor=tf.abs(prediction -
+                                                 ratio_undecided), axis=-1) + 0.0001)
     if weight_map is None:
-        return tf.reduce_mean(res_undecided)
+        return tf.reduce_mean(input_tensor=res_undecided)
     else:
-        res_undecided = tf.Print(tf.cast(res_undecided, tf.float32), [tf.shape(
-            res_undecided), tf.shape(weight_map), tf.shape(
-                res_undecided*weight_map)], message='test_printshape_und')
-        return tf.reduce_sum(res_undecided * weight_map /
-                             tf.reduce_sum(weight_map))
+        res_undecided = tf.compat.v1.Print(tf.cast(res_undecided, tf.float32), [tf.shape(
+            input=res_undecided), tf.shape(input=weight_map), tf.shape(
+                input=res_undecided*weight_map)], message='test_printshape_und')
+        return tf.reduce_sum(input_tensor=res_undecided * weight_map /
+                             tf.reduce_sum(input_tensor=weight_map))
 
 
 def volume_enforcement(prediction, ground_truth, weight_map=None, eps=0.001,
@@ -230,24 +230,24 @@ def volume_enforcement(prediction, ground_truth, weight_map=None, eps=0.001,
     prediction = tf.cast(prediction, tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
-    gt_red = tf.sparse_reduce_sum(one_hot, 0)
-    pred_red = tf.reduce_sum(prediction, 0)
+    gt_red = tf.sparse.reduce_sum(one_hot, 0)
+    pred_red = tf.reduce_sum(input_tensor=prediction, axis=0)
     if hard:
-        pred_red  = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
-            prediction,-1),tf.shape(prediction)[-1]), 0)
+        pred_red  = tf.sparse.reduce_sum(labels_to_one_hot(tf.argmax(
+            input=prediction,axis=-1),tf.shape(input=prediction)[-1]), 0)
 
     if weight_map is not None:
         n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(tf.reshape(weight_map,
                                                                 [-1]), 1),
                                       [1, n_classes])
-        gt_red = tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
-                                      reduction_axes=[0])
-        pred_red = tf.reduce_sum(weight_map_nclasses * prediction, 0)
+        gt_red = tf.sparse.reduce_sum(weight_map_nclasses * one_hot,
+                                      axis=[0])
+        pred_red = tf.reduce_sum(input_tensor=weight_map_nclasses * prediction, axis=0)
 
-    return tf.reduce_mean(tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps) -
+    return tf.reduce_mean(input_tensor=tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps) -
                                             (pred_red+eps)/(gt_red+eps))))
 
 
@@ -266,22 +266,22 @@ def volume_enforcement_fin(prediction, ground_truth, weight_map=None,
     prediction = tf.cast(prediction, tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
-    gt_red = tf.sparse_reduce_sum(one_hot, 0)
-    pred_red = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
-            prediction,-1),tf.shape(prediction)[-1]), 0)
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
+    gt_red = tf.sparse.reduce_sum(one_hot, 0)
+    pred_red = tf.sparse.reduce_sum(labels_to_one_hot(tf.argmax(
+            input=prediction,axis=-1),tf.shape(input=prediction)[-1]), 0)
 
     if weight_map is not None:
         n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(tf.reshape(weight_map,
                                                                 [-1]), 1),
                                       [1, n_classes])
-        gt_red = tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
-                                      reduction_axes=[0])
-        pred_red = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
-            prediction, -1), tf.shape(prediction)[-1]) * weight_map_nclasses, 0)
+        gt_red = tf.sparse.reduce_sum(weight_map_nclasses * one_hot,
+                                      axis=[0])
+        pred_red = tf.sparse.reduce_sum(labels_to_one_hot(tf.argmax(
+            input=prediction, axis=-1), tf.shape(input=prediction)[-1]) * weight_map_nclasses, 0)
 
-    return tf.reduce_mean(tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps)
+    return tf.reduce_mean(input_tensor=tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps)
                                             - (pred_red+eps)/(gt_red+eps))))
 
 
@@ -306,7 +306,7 @@ def generalised_dice_loss(prediction,
     prediction = tf.cast(prediction, tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
     if weight_map is not None:
         num_classes = prediction.shape[1].value
@@ -314,39 +314,39 @@ def generalised_dice_loss(prediction,
         #     tf.tile(weight_map, [num_classes]), prediction.get_shape())
         weight_map_nclasses = tf.tile(
             tf.expand_dims(tf.reshape(weight_map, [-1]), 1), [1, num_classes])
-        ref_vol = tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot, reduction_axes=[0])
+        ref_vol = tf.sparse.reduce_sum(
+            weight_map_nclasses * one_hot, axis=[0])
 
-        intersect = tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        intersect = tf.sparse.reduce_sum(
+            weight_map_nclasses * one_hot * prediction, axis=[0])
         seg_vol = tf.reduce_sum(
-            tf.multiply(weight_map_nclasses, prediction), 0)
+            input_tensor=tf.multiply(weight_map_nclasses, prediction), axis=0)
     else:
-        ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
-        intersect = tf.sparse_reduce_sum(one_hot * prediction,
-                                         reduction_axes=[0])
-        seg_vol = tf.reduce_sum(prediction, 0)
+        ref_vol = tf.sparse.reduce_sum(one_hot, axis=[0])
+        intersect = tf.sparse.reduce_sum(one_hot * prediction,
+                                         axis=[0])
+        seg_vol = tf.reduce_sum(input_tensor=prediction, axis=0)
     if type_weight == 'Square':
-        weights = tf.reciprocal(tf.square(ref_vol))
+        weights = tf.math.reciprocal(tf.square(ref_vol))
     elif type_weight == 'Simple':
-        weights = tf.reciprocal(ref_vol)
+        weights = tf.math.reciprocal(ref_vol)
     elif type_weight == 'Uniform':
         weights = tf.ones_like(ref_vol)
     else:
         raise ValueError("The variable type_weight \"{}\""
                          "is not defined.".format(type_weight))
-    new_weights = tf.where(tf.is_inf(weights), tf.zeros_like(weights), weights)
-    weights = tf.where(tf.is_inf(weights), tf.ones_like(weights) *
-                       tf.reduce_max(new_weights), weights)
+    new_weights = tf.compat.v1.where(tf.math.is_inf(weights), tf.zeros_like(weights), weights)
+    weights = tf.compat.v1.where(tf.math.is_inf(weights), tf.ones_like(weights) *
+                       tf.reduce_max(input_tensor=new_weights), weights)
     generalised_dice_numerator = \
-        2 * tf.reduce_sum(tf.multiply(weights, intersect))
+        2 * tf.reduce_sum(input_tensor=tf.multiply(weights, intersect))
     # generalised_dice_denominator = \
     #     tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
     generalised_dice_denominator = tf.reduce_sum(
-        tf.multiply(weights, tf.maximum(seg_vol + ref_vol, 1)))
+        input_tensor=tf.multiply(weights, tf.maximum(seg_vol + ref_vol, 1)))
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
-    generalised_dice_score = tf.where(tf.is_nan(generalised_dice_score), 1.0,
+    generalised_dice_score = tf.compat.v1.where(tf.math.is_nan(generalised_dice_score), 1.0,
                                       generalised_dice_score)
     return 1 - generalised_dice_score
 
@@ -359,11 +359,11 @@ def tf_repeat(tensor, repeats):
 
     A Tensor. Has the same type as input. Has the shape of tensor.shape * repeats
     """
-    with tf.variable_scope("repeat"):
+    with tf.compat.v1.variable_scope("repeat"):
         expanded_tensor = tf.expand_dims(tensor, -1)
         multiples = [1] + repeats
         tiled_tensor = tf.tile(expanded_tensor, multiples = multiples)
-        repeated_tesnor = tf.reshape(tiled_tensor, tf.shape(tensor) * repeats)
+        repeated_tesnor = tf.reshape(tiled_tensor, tf.shape(input=tensor) * repeats)
     return repeated_tesnor
 
 def weighted_hausdorff_loss(prediction, ground_truth, weight_map = None):
@@ -389,8 +389,8 @@ def weighted_hausdorff_loss(prediction, ground_truth, weight_map = None):
                                                  np.arange(resized_width))),
                                                  dtype=np.float32)
 
-    all_img_locations = tf.convert_to_tensor(cartesian_product,
-                                                       tf.float32)
+    all_img_locations = tf.convert_to_tensor(value=cartesian_product,
+                                                       dtype=tf.float32)
 
     import pdb; pdb.set_trace()
 
@@ -415,31 +415,31 @@ def weighted_hausdorff_loss(prediction, ground_truth, weight_map = None):
         prob_map_b = y_pred[..., c]
         # Pairwise distances between all possible locations and the GTed locations
 
-        gt_b = tf.where(gt_b)
+        gt_b = tf.compat.v1.where(gt_b)
         gt_b = tf.cast(gt_b, tf.float32)
 
-        n_gt_pts = tf.reduce_sum(gt_b)
-        d_matrix = tf.sqrt(tf.maximum(tf.reshape(tf.reduce_sum(gt_b*gt_b, axis=1), (-1, 1)) + tf.reduce_sum(all_img_locations*all_img_locations, axis=1)-2*(tf.matmul(gt_b, tf.transpose(all_img_locations))), 0.0))
-        d_matrix = tf.transpose(d_matrix)
+        n_gt_pts = tf.reduce_sum(input_tensor=gt_b)
+        d_matrix = tf.sqrt(tf.maximum(tf.reshape(tf.reduce_sum(input_tensor=gt_b*gt_b, axis=1), (-1, 1)) + tf.reduce_sum(input_tensor=all_img_locations*all_img_locations, axis=1)-2*(tf.matmul(gt_b, tf.transpose(a=all_img_locations))), 0.0))
+        d_matrix = tf.transpose(a=d_matrix)
         # Reshape probability map as a long column vector,
         # and prepare it for multiplication
         p = tf.reshape(prob_map_b, (n_pixels, 1))
-        n_est_pts = tf.reduce_sum(p)
+        n_est_pts = tf.reduce_sum(input_tensor=p)
         p_replicated = tf_repeat(tf.reshape(p, (-1, 1)), [1, n_gt_pts])
         eps = 1e-6
         alpha = 4
         # Weighted Hausdorff Distance
-        term_1 = (1 / (n_est_pts + eps)) * tf.reduce_sum(p * tf.reshape(tf.reduce_min(d_matrix, axis=1), (-1, 1)))
-        d_div_p = tf.reduce_min((d_matrix + eps) / (p_replicated**alpha + eps / max_dist), axis=0)
+        term_1 = (1 / (n_est_pts + eps)) * tf.reduce_sum(input_tensor=p * tf.reshape(tf.reduce_min(input_tensor=d_matrix, axis=1), (-1, 1)))
+        d_div_p = tf.reduce_min(input_tensor=(d_matrix + eps) / (p_replicated**alpha + eps / max_dist), axis=0)
         d_div_p = tf.clip_by_value(d_div_p, 0, max_dist)
-        term_2 = tf.reduce_mean(d_div_p, axis=0)
+        term_2 = tf.reduce_mean(input_tensor=d_div_p, axis=0)
         terms_1.append(term_1)
         terms_2.append(term_2)
 
     terms_1 = tf.stack(terms_1)
     terms_2 = tf.stack(terms_2)
-    terms_1 = tf.Print(tf.reduce_mean(terms_1), [tf.reduce_mean(terms_1)], "term 1")
-    terms_2 = tf.Print(tf.reduce_mean(terms_2), [tf.reduce_mean(terms_2)], "term 2")
+    terms_1 = tf.compat.v1.Print(tf.reduce_mean(input_tensor=terms_1), [tf.reduce_mean(input_tensor=terms_1)], "term 1")
+    terms_2 = tf.compat.v1.Print(tf.reduce_mean(input_tensor=terms_2), [tf.reduce_mean(input_tensor=terms_2)], "term 2")
     res = terms_1 + terms_2
     return res
 
@@ -458,7 +458,7 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     :return: the loss (cross_entropy + Dice)
 
     """
-    num_classes = tf.shape(prediction)[-1]
+    num_classes = tf.shape(input=prediction)[-1]
 
     prediction = tf.cast(prediction, tf.float32)
     loss_xent = cross_entropy(prediction, ground_truth, weight_map=weight_map)
@@ -470,24 +470,24 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     if weight_map is not None:
         weight_map_nclasses = tf.tile(
             tf.reshape(weight_map, [-1, 1]), [1, num_classes])
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(
             weight_map_nclasses * one_hot * softmax_of_logits,
-            reduction_axes=[0])
+            axis=[0])
         dice_denominator = \
-            tf.reduce_sum(weight_map_nclasses * softmax_of_logits,
-                          reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(one_hot * weight_map_nclasses,
-                                 reduction_axes=[0])
+            tf.reduce_sum(input_tensor=weight_map_nclasses * softmax_of_logits,
+                          axis=[0]) + \
+            tf.sparse.reduce_sum(one_hot * weight_map_nclasses,
+                                 axis=[0])
     else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
-            one_hot * softmax_of_logits, reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(
+            one_hot * softmax_of_logits, axis=[0])
         dice_denominator = \
-            tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+            tf.reduce_sum(input_tensor=softmax_of_logits, axis=[0]) + \
+            tf.sparse.reduce_sum(one_hot, axis=[0])
 
     epsilon = 0.00001
     loss_dice = -(dice_numerator + epsilon) / (dice_denominator + epsilon)
-    dice_numerator = tf.Print(
+    dice_numerator = tf.compat.v1.Print(
         dice_denominator, [dice_numerator, dice_denominator, loss_dice])
 
     #Peixinho: in the original paper, dice is negative (the bigger the better), allowing the loss to be up to -1
@@ -516,12 +516,12 @@ def sensitivity_specificity_loss(prediction,
     """
     if weight_map is not None:
         # raise NotImplementedError
-        tf.logging.warning('Weight map specified but not used.')
+        tf.compat.v1.logging.warning('Weight map specified but not used.')
 
     prediction = tf.cast(prediction, tf.float32)
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
-    one_hot = tf.sparse_tensor_to_dense(one_hot)
+    one_hot = tf.sparse.to_dense(one_hot)
     # value of unity everywhere except for the previous 'hot' locations
     one_cold = 1 - one_hot
 
@@ -530,13 +530,13 @@ def sensitivity_specificity_loss(prediction,
 
     squared_error = tf.square(one_hot - prediction)
     specificity_part = tf.reduce_sum(
-        squared_error * one_hot, 0) / \
-                       (tf.reduce_sum(one_hot, 0) + epsilon)
+        input_tensor=squared_error * one_hot, axis=0) / \
+                       (tf.reduce_sum(input_tensor=one_hot, axis=0) + epsilon)
     sensitivity_part = \
-        (tf.reduce_sum(tf.multiply(squared_error, one_cold), 0) /
-         (tf.reduce_sum(one_cold, 0) + epsilon))
+        (tf.reduce_sum(input_tensor=tf.multiply(squared_error, one_cold), axis=0) /
+         (tf.reduce_sum(input_tensor=one_cold, axis=0) + epsilon))
 
-    return tf.reduce_sum(r * specificity_part + (1 - r) * sensitivity_part)
+    return tf.reduce_sum(input_tensor=r * specificity_part + (1 - r) * sensitivity_part)
 
 
 def cross_entropy(prediction, ground_truth, weight_map=None):
@@ -558,10 +558,10 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
         logits=prediction, labels=ground_truth)
 
     if weight_map is None:
-        return tf.reduce_mean(entropy)
+        return tf.reduce_mean(input_tensor=entropy)
 
-    weight_sum = tf.maximum(tf.reduce_sum(weight_map), 1e-6)
-    return tf.reduce_sum(entropy * weight_map / weight_sum)
+    weight_sum = tf.maximum(tf.reduce_sum(input_tensor=weight_map), 1e-6)
+    return tf.reduce_sum(input_tensor=entropy * weight_map / weight_sum)
 
 
 def cross_entropy_dense(prediction, ground_truth, weight_map=None):
@@ -569,8 +569,8 @@ def cross_entropy_dense(prediction, ground_truth, weight_map=None):
         raise NotImplementedError
 
     entropy = tf.nn.softmax_cross_entropy_with_logits(
-        logits=prediction, labels=ground_truth)
-    return tf.reduce_mean(entropy)
+        logits=prediction, labels=tf.stop_gradient(ground_truth))
+    return tf.reduce_mean(input_tensor=entropy)
 
 
 def wasserstein_disagreement_map(
@@ -587,7 +587,7 @@ def wasserstein_disagreement_map(
     """
     if weight_map is not None:
         # raise NotImplementedError
-        tf.logging.warning('Weight map specified but not used.')
+        tf.compat.v1.logging.warning('Weight map specified but not used.')
 
     assert M is not None, "Distance matrix is required."
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
@@ -627,25 +627,25 @@ def generalised_wasserstein_dice_loss(prediction,
     """
     if weight_map is not None:
         # raise NotImplementedError
-        tf.logging.warning('Weight map specified but not used.')
+        tf.compat.v1.logging.warning('Weight map specified but not used.')
 
     prediction = tf.cast(prediction, tf.float32)
     num_classes = prediction.shape[1].value
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
-    one_hot = tf.sparse_tensor_to_dense(one_hot)
+    one_hot = tf.sparse.to_dense(one_hot)
     # M = tf.cast(M, dtype=tf.float64)
     # compute disagreement map (delta)
     M = M_tree
     delta = wasserstein_disagreement_map(prediction, one_hot, M=M)
     # compute generalisation of all error for multi-class seg
-    all_error = tf.reduce_sum(delta)
+    all_error = tf.reduce_sum(input_tensor=delta)
     # compute generalisation of true positives for multi-class seg
     one_hot = tf.cast(one_hot, dtype=tf.float64)
     true_pos = tf.reduce_sum(
-        tf.multiply(tf.constant(M[0, :num_classes], dtype=tf.float64), one_hot),
+        input_tensor=tf.multiply(tf.constant(M[0, :num_classes], dtype=tf.float64), one_hot),
         axis=1)
-    true_pos = tf.reduce_sum(tf.multiply(true_pos, 1. - delta), axis=0)
+    true_pos = tf.reduce_sum(input_tensor=tf.multiply(true_pos, 1. - delta), axis=0)
     WGDL = 1. - (2. * true_pos) / (2. * true_pos + all_error)
     return tf.cast(WGDL, dtype=tf.float32)
 
@@ -668,31 +668,31 @@ def dice(prediction, ground_truth, weight_map=None):
     prediction = tf.cast(prediction, tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
     if weight_map is not None:
         num_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(
             tf.reshape(weight_map, [-1]), 1), [1, num_classes])
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(
+            weight_map_nclasses * one_hot * prediction, axis=[0])
         dice_denominator = \
-            tf.reduce_sum(weight_map_nclasses * tf.square(prediction),
-                          reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(one_hot * weight_map_nclasses,
-                                 reduction_axes=[0])
+            tf.reduce_sum(input_tensor=weight_map_nclasses * tf.square(prediction),
+                          axis=[0]) + \
+            tf.sparse.reduce_sum(one_hot * weight_map_nclasses,
+                                 axis=[0])
     else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
-            one_hot * prediction, reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(
+            one_hot * prediction, axis=[0])
         dice_denominator = \
-            tf.reduce_sum(tf.square(prediction), reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+            tf.reduce_sum(input_tensor=tf.square(prediction), axis=[0]) + \
+            tf.sparse.reduce_sum(one_hot, axis=[0])
     epsilon = 0.00001
 
     dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
-    return 1.0 - tf.reduce_mean(dice_score)
+    return 1.0 - tf.reduce_mean(input_tensor=dice_score)
 
 
 def dice_nosquare(prediction, ground_truth, weight_map=None):
@@ -707,31 +707,31 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     prediction = tf.cast(prediction, tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
 
     # dice
     if weight_map is not None:
         num_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(
             tf.reshape(weight_map, [-1]), 1), [1, num_classes])
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(
+            weight_map_nclasses * one_hot * prediction, axis=[0])
         dice_denominator = \
-            tf.reduce_sum(prediction * weight_map_nclasses,
-                          reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
-                                 reduction_axes=[0])
+            tf.reduce_sum(input_tensor=prediction * weight_map_nclasses,
+                          axis=[0]) + \
+            tf.sparse.reduce_sum(weight_map_nclasses * one_hot,
+                                 axis=[0])
     else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * prediction,
-                                                    reduction_axes=[0])
-        dice_denominator = tf.reduce_sum(prediction, reduction_indices=[0]) + \
-                           tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse.reduce_sum(one_hot * prediction,
+                                                    axis=[0])
+        dice_denominator = tf.reduce_sum(input_tensor=prediction, axis=[0]) + \
+                           tf.sparse.reduce_sum(one_hot, axis=[0])
     epsilon = 0.00001
 
     dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
-    return 1.0 - tf.reduce_mean(dice_score)
+    return 1.0 - tf.reduce_mean(input_tensor=dice_score)
 
 
 def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
@@ -750,11 +750,11 @@ def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
     :param weight_map:
     :return: the loss
     """
-    prediction = tf.to_float(prediction)
+    prediction = tf.cast(prediction, dtype=tf.float32)
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
-    one_hot = tf.sparse_tensor_to_dense(one_hot)
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(input=prediction)[-1])
+    one_hot = tf.sparse.to_dense(one_hot)
 
     p0 = prediction
     p1 = 1 - prediction
@@ -769,15 +769,15 @@ def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
     else:
         weight_map_nclasses = 1
 
-    tp = tf.reduce_sum(weight_map_nclasses * p0 * g0)
-    fp = alpha * tf.reduce_sum(weight_map_nclasses * p0 * g1)
-    fn = beta * tf.reduce_sum(weight_map_nclasses * p1 * g0)
+    tp = tf.reduce_sum(input_tensor=weight_map_nclasses * p0 * g0)
+    fp = alpha * tf.reduce_sum(input_tensor=weight_map_nclasses * p0 * g1)
+    fn = beta * tf.reduce_sum(input_tensor=weight_map_nclasses * p1 * g0)
 
     EPSILON = 0.00001
     numerator = tp
     denominator = tp + fp + fn + EPSILON
     score = numerator / denominator
-    return 1.0 - tf.reduce_mean(score)
+    return 1.0 - tf.reduce_mean(input_tensor=score)
 
 
 def dice_dense(prediction, ground_truth, weight_map=None):
@@ -799,15 +799,15 @@ def dice_dense(prediction, ground_truth, weight_map=None):
     # computing Dice over the spatial dimensions
     reduce_axes = list(range(len(prediction.shape) - 1))
     dice_numerator = 2.0 * tf.reduce_sum(
-        prediction * ground_truth, axis=reduce_axes)
+        input_tensor=prediction * ground_truth, axis=reduce_axes)
     dice_denominator = \
-        tf.reduce_sum(tf.square(prediction), axis=reduce_axes) + \
-        tf.reduce_sum(tf.square(ground_truth), axis=reduce_axes)
+        tf.reduce_sum(input_tensor=tf.square(prediction), axis=reduce_axes) + \
+        tf.reduce_sum(input_tensor=tf.square(ground_truth), axis=reduce_axes)
 
     epsilon = 0.00001
 
     dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
-    return 1.0 - tf.reduce_mean(dice_score)
+    return 1.0 - tf.reduce_mean(input_tensor=dice_score)
 
 
 def dice_dense_nosquare(prediction, ground_truth, weight_map=None):
@@ -829,11 +829,11 @@ def dice_dense_nosquare(prediction, ground_truth, weight_map=None):
     # computing Dice over the spatial dimensions
     reduce_axes = list(range(len(prediction.shape) - 1))
     dice_numerator = 2.0 * tf.reduce_sum(
-        prediction * ground_truth, axis=reduce_axes)
+        input_tensor=prediction * ground_truth, axis=reduce_axes)
     dice_denominator = \
-        tf.reduce_sum(prediction, axis=reduce_axes) + \
-        tf.reduce_sum(ground_truth, axis=reduce_axes)
+        tf.reduce_sum(input_tensor=prediction, axis=reduce_axes) + \
+        tf.reduce_sum(input_tensor=ground_truth, axis=reduce_axes)
     epsilon = 0.00001
 
     dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
-    return 1.0 - tf.reduce_mean(dice_score)
+    return 1.0 - tf.reduce_mean(input_tensor=dice_score)

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
@@ -32,7 +32,7 @@ class DeconvTest(NiftyNetTestCase):
         output_data = deconv_layer(input_data)
         print(deconv_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
 
@@ -53,7 +53,7 @@ class DeconvTest(NiftyNetTestCase):
                                    keep_prob=dropout_prob)
         print(deconv_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
 
@@ -79,8 +79,8 @@ class DeconvTest(NiftyNetTestCase):
                        'kernel_size': 3,
                        'stride': [2, 2, 1],
                        'with_bias': True,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_deconv_output_shape(rank=3,
                                        param_dict=input_param,
                                        output_shape=(2, 32, 32, 16, 10))
@@ -115,8 +115,8 @@ class DeconvTest(NiftyNetTestCase):
                        'stride': 1,
                        'with_bias': True,
                        'feature_normalization': None,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 16, 16, 10))
@@ -130,7 +130,7 @@ class DeconvTest(NiftyNetTestCase):
                        'stride': 1,
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 16, 16, 10),
@@ -146,7 +146,7 @@ class DeconvTest(NiftyNetTestCase):
                        'stride': [1, 1, 2],
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
+                       'w_regularizer': regularizers.L2(0.5),
                        'acti_func': 'prelu'}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
@@ -180,7 +180,7 @@ class DeconvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 32, 32, 10),
@@ -197,7 +197,7 @@ class DeconvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 32, 16, 10),
@@ -231,8 +231,8 @@ class DeconvTest(NiftyNetTestCase):
                        'kernel_size': [3, 1],
                        'stride': [2, 1],
                        'with_bias': True,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_deconv_output_shape(rank=2,
                                        param_dict=input_param,
                                        output_shape=(2, 32, 16, 10))
@@ -271,8 +271,8 @@ class DeconvTest(NiftyNetTestCase):
                        'stride': [2, 3],
                        'with_bias': True,
                        'feature_normalization': None,
-                       'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'b_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5),
+                       'b_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 32, 48, 10),
@@ -288,7 +288,7 @@ class DeconvTest(NiftyNetTestCase):
                        'stride': [1, 3],
                        'with_bias': False,
                        'feature_normalization': 'batch',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 48, 10),
@@ -305,7 +305,7 @@ class DeconvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 48, 10),
@@ -322,7 +322,7 @@ class DeconvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'relu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 48, 10),
@@ -339,7 +339,7 @@ class DeconvTest(NiftyNetTestCase):
                        'with_bias': False,
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 16, 48, 10),
@@ -359,7 +359,7 @@ class DeconvTest(NiftyNetTestCase):
                        'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'padding': 'VALID',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 19, 33, 10),
@@ -380,7 +380,7 @@ class DeconvTest(NiftyNetTestCase):
                        'group_size': 5,
                        'acti_func': 'prelu',
                        'padding': 'VALID',
-                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+                       'w_regularizer': regularizers.L2(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 19, 33, 10),

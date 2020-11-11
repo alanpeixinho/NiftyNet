@@ -20,7 +20,7 @@ def get_config():
 
 class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
     def test_3d_shape(self):
-        x = tf.random_normal(shape=[2,4,5,6,4])
+        x = tf.random.normal(shape=[2,4,5,6,4])
         conv1 = ChannelSparseConvolutionalLayer(4)
         conv2 = ChannelSparseConvolutionalLayer(8, kernel_size=[1,1,3])
         conv3 = ChannelSparseConvolutionalLayer(4, acti_func='relu')
@@ -33,7 +33,7 @@ class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
         x5, mask5=conv5(x4, mask4, True, 1.)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out1, out2, out3, out4, out5 = sess.run([x1,x2,x3,x4,x5])
         self.assertAllClose([2,4,5,6,4], out1.shape)
         self.assertAllClose([2,4,5,6,8], out2.shape)
@@ -42,7 +42,7 @@ class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
         self.assertAllClose([2,4,5,6,4], out5.shape)
 
     def test_2d_shape(self):
-        x = tf.random_normal(shape=[2,4,5,4])
+        x = tf.random.normal(shape=[2,4,5,4])
         conv1 = ChannelSparseConvolutionalLayer(4)
         conv2 = ChannelSparseConvolutionalLayer(8, kernel_size=[1,1,3])
         conv3 = ChannelSparseConvolutionalLayer(4, acti_func='relu')
@@ -55,7 +55,7 @@ class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
         x5, mask5=conv5(x4, mask4, True, 1.)
 
         with self.cached_session(config=get_config()) as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out1, out2, out3, out4, out5 = sess.run([x1,x2,x3,x4,x5])
         self.assertAllClose([2,4,5,4], out1.shape)
         self.assertAllClose([2,4,5,8], out2.shape)
@@ -64,7 +64,7 @@ class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
         self.assertAllClose([2,4,5,4], out5.shape)
 
     def test_masks(self):
-        x = tf.random_normal(shape=[2,4,5,4])
+        x = tf.random.normal(shape=[2,4,5,4])
         conv1 = ChannelSparseConvolutionalLayer(10)
         conv2 = ChannelSparseConvolutionalLayer(10)
         conv3 = ChannelSparseConvolutionalLayer(10)
@@ -75,7 +75,7 @@ class ChannelSparseConvolutionalLayerTest(NiftyNetTestCase):
         x4, mask4=conv4(x3, mask3, True, 1.)
 
         with self.cached_session(config=get_config()) as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out1, out2, out3, out4 = sess.run([mask1, mask2, mask3, mask4])
         self.assertAllClose([10, 5, 2, 10], [np.sum(out1),
                                              np.sum(out2),

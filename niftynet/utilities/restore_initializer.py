@@ -70,9 +70,9 @@ class _Restore(init_ops.Initializer):
         # output several tensors seems inefficient, but that's actually
         # what tf.Saver.restore_op (via tf.BaseSaverBuilder) does too.
         if self._scope is None:
-            scope_name = tf.get_variable_scope().name
+            scope_name = tf.compat.v1.get_variable_scope().name
         elif callable(self._scope):
-            scope_name = self._scope(tf.get_variable_scope().name)
+            scope_name = self._scope(tf.compat.v1.get_variable_scope().name)
         else:
             scope_name = self._scope
         tensor_name = self._var_name

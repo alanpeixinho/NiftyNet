@@ -18,7 +18,7 @@ class ToyApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting toy application')
+        tf.compat.v1.logging.info('starting toy application')
         self.action = action
 
         self.net_param = net_param
@@ -48,7 +48,7 @@ class ToyApplication(BaseApplication):
                                  gradients_collector=None):
         print(vars(self.action_param))
         self.patience = self.action_param.patience
-        with tf.name_scope('Optimiser'):
+        with tf.compat.v1.name_scope('Optimiser'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
             self.optimiser = optimiser_class.get_instance(
@@ -58,12 +58,12 @@ class ToyApplication(BaseApplication):
 
         d_loss, g_loss = self.compute_loss(fake_logits, real_logits)
 
-        with tf.name_scope('ComputeGradients'):
-            d_vars = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES,
+        with tf.compat.v1.name_scope('ComputeGradients'):
+            d_vars = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.d_net.layer_scope().name)
-            g_vars = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES,
+            g_vars = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.g_net.layer_scope().name)
             grads_d = self.optimiser.compute_gradients(
                 d_loss, var_list=d_vars)
@@ -81,7 +81,7 @@ class ToyApplication(BaseApplication):
         outputs_collector.add_to_collection(
             var=g_loss, name='g_loss', average_over_devices=True,
             collection=TF_SUMMARIES)
-        g_mean, g_var = tf.nn.moments(fake_features, axes=[0, 1, 2])
+        g_mean, g_var = tf.nn.moments(x=fake_features, axes=[0, 1, 2])
         g_var = tf.sqrt(g_var)
         outputs_collector.add_to_collection(
             var=g_mean, name='mean', average_over_devices=True,
@@ -100,8 +100,8 @@ class ToyApplication(BaseApplication):
             collection=TF_SUMMARIES)
 
     def compute_loss(self, fake_logits, real_logits):
-        d_loss = tf.reduce_mean(real_logits - fake_logits)
-        g_loss = tf.reduce_mean(fake_logits)
+        d_loss = tf.reduce_mean(input_tensor=real_logits - fake_logits)
+        g_loss = tf.reduce_mean(input_tensor=fake_logits)
         return d_loss, g_loss
 
     def feed_forward(self):
@@ -109,7 +109,7 @@ class ToyApplication(BaseApplication):
         data_x = self.get_sampler()[0][0].pop_batch_op()
         features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
         features = tf.expand_dims(features, axis=-1, name='feature_input')
-        noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
+        noise = tf.random.uniform(tf.shape(input=features), 0.0, 1.0)
         real_logits, fake_logits, fake_features = self.net(features, noise)
         return fake_features, fake_logits, real_logits
 
@@ -121,7 +121,7 @@ class ToyApplicationMultOpti(ToyApplication):
 
     def __init__(self, net_param, action_param, action):
         ToyApplication.__init__(self, net_param, action_param, action)
-        tf.logging.info('starting toy application using multiple optimiser')
+        tf.compat.v1.logging.info('starting toy application using multiple optimiser')
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -129,14 +129,14 @@ class ToyApplicationMultOpti(ToyApplication):
         self.patience = self.action_param.patience
         print(vars(self.action_param))
         self.optimiser = dict()
-        with tf.name_scope('OptimiserGen'):
+        with tf.compat.v1.name_scope('OptimiserGen'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
             self.optimiser['gen'] = optimiser_class.get_instance(
                 learning_rate=self.action_param.lr)
 
         # 2nd optimiser could be initialized different
-        with tf.name_scope('OptimiserDis'):
+        with tf.compat.v1.name_scope('OptimiserDis'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
             self.optimiser['dis'] = optimiser_class.get_instance(
@@ -147,15 +147,15 @@ class ToyApplicationMultOpti(ToyApplication):
         d_loss, g_loss = self.compute_loss(fake_logits, real_logits)
 
         grads = dict()
-        with tf.name_scope('ComputeGradientsD'):
-            d_vars = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES,
+        with tf.compat.v1.name_scope('ComputeGradientsD'):
+            d_vars = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.d_net.layer_scope().name)
             grads['dis'] = self.optimiser['dis'].compute_gradients(
                 d_loss, var_list=d_vars)
-        with tf.name_scope('ComputeGradientsG'):
-            g_vars = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES,
+        with tf.compat.v1.name_scope('ComputeGradientsG'):
+            g_vars = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.g_net.layer_scope().name)
             grads['gen'] = self.optimiser['gen'].compute_gradients(
                 g_loss, var_list=g_vars)

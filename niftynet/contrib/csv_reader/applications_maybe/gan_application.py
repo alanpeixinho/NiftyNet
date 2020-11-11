@@ -32,7 +32,7 @@ class GANApplication(BaseApplication):
 
     def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
-        tf.logging.info('starting GAN application')
+        tf.compat.v1.logging.info('starting GAN application')
         self.action = action
 
         self.net_param = net_param
@@ -52,11 +52,11 @@ class GANApplication(BaseApplication):
             # in the inference process use `conditioning` input only
             reader_names = ('conditioning',)
         elif self.is_evaluation:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Evaluation is not yet supported in this application.')
             raise NotImplementedError
         else:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
                 self.action, self.SUPPORTED_PHASES)
             raise ValueError
@@ -162,21 +162,21 @@ class GANApplication(BaseApplication):
             self.patience = self.action_param.patience
 
             def switch_sampler(for_training):
-                with tf.name_scope('train' if for_training else 'validation'):
+                with tf.compat.v1.name_scope('train' if for_training else 'validation'):
                     sampler = self.get_sampler()[0][0 if for_training else -1]
                     return sampler.pop_batch_op()
 
             if self.action_param.validation_every_n > 0:
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(for_training=True),
-                                    lambda: switch_sampler(for_training=False))
+                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                                    true_fn=lambda: switch_sampler(for_training=True),
+                                    false_fn=lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
             images = tf.cast(data_dict['image'], tf.float32)
             noise_shape = [self.net_param.batch_size,
                            self.gan_param.noise_size]
-            noise = tf.random_normal(shape=noise_shape,
+            noise = tf.random.normal(shape=noise_shape,
                                      mean=0.0,
                                      stddev=1.0,
                                      dtype=tf.float32)
@@ -190,11 +190,11 @@ class GANApplication(BaseApplication):
             fake_logits = net_output[2]
             lossG, lossD = loss_func(real_logits, fake_logits)
             if self.net_param.decay > 0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                reg_losses = tf.compat.v1.get_collection(
+                    tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
                 if reg_losses:
                     reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(l_reg) for l_reg in reg_losses])
+                        input_tensor=[tf.reduce_mean(input_tensor=l_reg) for l_reg in reg_losses])
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
 
@@ -223,28 +223,26 @@ class GANApplication(BaseApplication):
                 var=lossG, name='lossD', average_over_devices=True,
                 collection=TF_SUMMARIES)
 
-            with tf.name_scope('Optimiser'):
+            with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
 
-            with tf.name_scope('ComputeGradients'):
+            with tf.compat.v1.name_scope('ComputeGradients'):
                 # gradients of generator
-                generator_variables = tf.get_collection(
-                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+                generator_variables = tf.compat.v1.get_collection(
+                    tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
                 generator_grads = self.optimiser.compute_gradients(
                     lossG,
-                    var_list=generator_variables,
-                    colocate_gradients_with_ops=True)
+                    var_list=generator_variables)
 
                 # gradients of discriminator
-                discriminator_variables = tf.get_collection(
-                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
+                discriminator_variables = tf.compat.v1.get_collection(
+                    tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
                 discriminator_grads = self.optimiser.compute_gradients(
                     lossD,
-                    var_list=discriminator_variables,
-                    colocate_gradients_with_ops=True)
+                    var_list=discriminator_variables)
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads

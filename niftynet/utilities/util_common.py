@@ -88,7 +88,7 @@ def average_gradients(multi_device_gradients):
     elif nested_grads_depth == 3:
         averaged_grads = __average_grads(multi_device_gradients)
     else:
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             "The list of gradients are nested in an unusual way."
             "application's gradient is not compatible with app driver."
             "Please check the return value of gradients_collector "
@@ -111,7 +111,7 @@ def __average_grads(tower_grads):
         if not grads:
             continue
         grad = tf.concat(grads, 0)
-        grad = tf.reduce_mean(grad, 0, name='AveOverDevices')
+        grad = tf.reduce_mean(input_tensor=grad, axis=0, name='AveOverDevices')
 
         v = grad_and_vars[0][1]
         grad_and_var = (grad, v)
@@ -418,7 +418,7 @@ def print_progress_bar(iteration, total,
 def set_cuda_device(cuda_devices):
     if re.findall("\\d", cuda_devices):
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
     else:
         # using Tensorflow default choice
@@ -451,7 +451,7 @@ def color_labels(x, palette):
 
     #palette = generate_color_palette(n)
     #tf_palette = tf.constant(palette)
-    return tf.nn.embedding_lookup(palette, x)
+    return tf.nn.embedding_lookup(params=palette, ids=x)
 
 def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
     """
@@ -467,7 +467,7 @@ def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
         # in training: use gpu only for workers whenever n_local_gpus
         device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
         if device == 'gpu' and device_id >= n_local_gpus:
-            tf.logging.warning(
+            tf.compat.v1.logging.warning(
                 'trying to use gpu id %s, but only has %s GPU(s), '
                 'please set num_gpus to %s at most',
                 device_id, n_local_gpus, n_local_gpus)
@@ -482,9 +482,9 @@ def tf_config(cuda_memory):
     tensorflow system configurations
     """
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
+    gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
 
-    config = tf.ConfigProto(gpu_options=gpu_options)
+    config = tf.compat.v1.ConfigProto(gpu_options=gpu_options)
     config.log_device_placement = False
     config.allow_soft_placement = True
 

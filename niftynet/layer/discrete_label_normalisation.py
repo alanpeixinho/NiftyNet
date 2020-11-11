@@ -125,13 +125,13 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         # to find input modality list
         assert image_list is not None, "nothing to training for this layer"
         if self.is_ready():
-            tf.logging.info(
+            tf.compat.v1.logging.info(
                 "label mapping ready for {}:{}, {} classes".format(
                     self.image_name,
                     self.modalities,
                     len(self.label_map[self.key[0]])))
             return
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             "Looking for the set of unique discrete labels from input {}"
             " using {} subjects".format(self.image_name, len(image_list)))
         label_map = find_set_of_labels(image_list, self.image_name, self.key)
@@ -156,7 +156,7 @@ def find_set_of_labels(image_list, field, output_key):
                                decimals=1, length=10, fill='*')
             unique_label = np.unique(image[field].get_data())
             if len(unique_label) > 500 or len(unique_label) <= 1:
-                tf.logging.warning(
+                tf.compat.v1.logging.warning(
                     'unusual discrete values: number of unique '
                     'labels to normalise %s', len(unique_label))
             label_set.update(set(unique_label))
@@ -167,7 +167,7 @@ def find_set_of_labels(image_list, field, output_key):
         mapping_from_to[output_key[0]] = tuple(label_set)
         mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
     except (IndexError, ValueError):
-        tf.logging.fatal("unable to create mappings keys: %s, image name %s",
+        tf.compat.v1.logging.fatal("unable to create mappings keys: %s, image name %s",
                          output_key, field)
         raise
     return mapping_from_to

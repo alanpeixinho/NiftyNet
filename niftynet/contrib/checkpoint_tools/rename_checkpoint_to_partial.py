@@ -21,12 +21,12 @@ def rename_checkpoint_to_partial(source,target,transform):
   print(transform_pairs)
   g = tf.Graph()
   with g.as_default():
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       for s_name,t_name in transform_pairs:
-        var = tf.contrib.framework.load_variable(source, s_name)
+        var = tf.train.load_variable(source, s_name)
         var = tf.Variable(var, name=t_name)
-      saver = tf.train.Saver()
-      sess.run(tf.global_variables_initializer())
+      saver = tf.compat.v1.train.Saver()
+      sess.run(tf.compat.v1.global_variables_initializer())
       saver.save(sess, target)
 usage = \
 """%s source_checkpoint destination_checkpoint rename_file

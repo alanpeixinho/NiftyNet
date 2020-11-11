@@ -4,7 +4,7 @@ import unittest
 
 import os
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.deepmedic import DeepMedic
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -18,13 +18,13 @@ class DeepMedicTest(NiftyNetTestCase):
 
         deepmedic_instance = DeepMedic(
             num_classes=160,
-            w_regularizer=regularizers.l2_regularizer(0.5),
-            b_regularizer=regularizers.l2_regularizer(0.5))
+            w_regularizer=regularizers.L2(0.5),
+            b_regularizer=regularizers.L2(0.5))
         out = deepmedic_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 9, 160), out.shape)
 
@@ -34,13 +34,13 @@ class DeepMedicTest(NiftyNetTestCase):
 
         deepmedic_instance = DeepMedic(
             num_classes=160,
-            w_regularizer=regularizers.l2_regularizer(0.5),
-            b_regularizer=regularizers.l2_regularizer(0.5))
+            w_regularizer=regularizers.L2(0.5),
+            b_regularizer=regularizers.L2(0.5))
         out = deepmedic_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 160), out.shape)
 
@@ -52,7 +52,7 @@ class DeepMedicTest(NiftyNetTestCase):
         out = deepmedic_instance(x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 9, 160), out.shape)
 
@@ -64,7 +64,7 @@ class DeepMedicTest(NiftyNetTestCase):
         out = deepmedic_instance(x, is_training=True)
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 160), out.shape)
 

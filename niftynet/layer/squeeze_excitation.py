@@ -32,9 +32,9 @@ class ChannelSELayer(Layer):
         input_rank = len(input_tensor.shape)
         reduce_indices = list(range(input_rank))[1:-1]
         if self.func == 'AVG':
-            squeeze_tensor = tf.reduce_mean(input_tensor, axis=reduce_indices)
+            squeeze_tensor = tf.reduce_mean(input_tensor=input_tensor, axis=reduce_indices)
         elif self.func == 'MAX':
-            squeeze_tensor = tf.reduce_max(input_tensor, axis=reduce_indices)
+            squeeze_tensor = tf.reduce_max(input_tensor=input_tensor, axis=reduce_indices)
         else:
             raise NotImplementedError("pooling function not supported")
 

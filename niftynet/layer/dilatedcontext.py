@@ -25,7 +25,7 @@ class DilatedTensor(object):
 
     def __enter__(self):
         if self.dilation_factor > 1:
-            self._tensor = tf.space_to_batch_nd(self._tensor,
+            self._tensor = tf.space_to_batch(self._tensor,
                                                 self.block_shape,
                                                 self.zero_paddings,
                                                 name='dilated')
@@ -33,7 +33,7 @@ class DilatedTensor(object):
 
     def __exit__(self, *args):
         if self.dilation_factor > 1:
-            self._tensor = tf.batch_to_space_nd(self._tensor,
+            self._tensor = tf.batch_to_space(self._tensor,
                                                 self.block_shape,
                                                 self.zero_paddings,
                                                 name='de-dilate')

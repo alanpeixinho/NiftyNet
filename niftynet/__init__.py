@@ -26,7 +26,7 @@ try:
     minimal_required_version = LooseVersion("1.5")
     tf_version = LooseVersion(tf.__version__)
     if tf_version < minimal_required_version:
-        tf.logging.fatal('TensorFlow %s or later is required.'
+        tf.compat.v1.logging.fatal('TensorFlow %s or later is required.'
                          '\n\nPlease upgrade TensorFlow'
                          ' (https://www.tensorflow.org/) to be'
                          ' able to use NiftyNet.\nCurrently using '
@@ -34,7 +34,7 @@ try:
                          minimal_required_version, tf_version, tf.__file__)
         raise ImportError
     else:
-        tf.logging.info('TensorFlow version %s', tf_version)
+        tf.compat.v1.logging.info('TensorFlow version %s', tf_version)
 except AttributeError:
     pass
 
@@ -99,7 +99,7 @@ def main():
     try:
         util.print_save_input_parameters(all_param, txt_file)
     except IOError:
-        tf.logging.fatal(
+        tf.compat.v1.logging.fatal(
             'Unable to write %s,\nplease check '
             'model_dir parameter, current value: %s',
             txt_file, system_param['SYSTEM'].model_dir)
@@ -157,9 +157,9 @@ def main():
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run(app_driver.app)
 
-    if tf.get_default_session() is not None:
-        tf.get_default_session().close()
-    tf.reset_default_graph()
+    if tf.compat.v1.get_default_session() is not None:
+        tf.compat.v1.get_default_session().close()
+    tf.compat.v1.reset_default_graph()
     close_logger()
 
     return 0

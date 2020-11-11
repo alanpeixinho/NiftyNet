@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.engine.application_initializer import GlorotUniform
 from niftynet.layer.convolution import ConvolutionalLayer as Conv
@@ -69,10 +69,10 @@ class INetAffine(BaseNet):
         self.affine_b_initializer = affine_b_initializer
         self.res_param = {
             'w_initializer': GlorotUniform.get_instance(''),
-            'w_regularizer': regularizers.l2_regularizer(decay),
+            'w_regularizer': regularizers.L2(decay),
             'acti_func': acti_func}
         self.affine_param = {
-            'w_regularizer': regularizers.l2_regularizer(decay),
+            'w_regularizer': regularizers.L2(decay),
             'b_regularizer': None}
 
     def layer_op(self,
@@ -109,7 +109,7 @@ class INetAffine(BaseNet):
         elif spatial_rank == 3:
             affine_size = 12
         else:
-            tf.logging.fatal('Not supported spatial rank')
+            tf.compat.v1.logging.fatal('Not supported spatial rank')
             raise NotImplementedError
 
         if self.affine_w_initializer is None:
@@ -131,7 +131,7 @@ def init_affine_w(std=1e-8):
     :param std: float, standard deviation of normal distribution for weight initialisation
     :return: random weight initialisation from normal distribution with zero mean
     """
-    return tf.random_normal_initializer(0, std)
+    return tf.compat.v1.random_normal_initializer(0, std)
 
 
 def init_affine_b(spatial_rank, initial_bias=0.0):
@@ -149,8 +149,8 @@ def init_affine_b(spatial_rank, initial_bias=0.0):
                              [0, 1, 0, 0],
                              [0, 0, 1, 0]]).flatten()
     else:
-        tf.logging.fatal('Not supported spatial rank')
+        tf.compat.v1.logging.fatal('Not supported spatial rank')
         raise NotImplementedError
     identity = identity.reshape([1, -1])
     identity = np.tile(identity, [1, 1])
-    return tf.constant_initializer(identity + initial_bias)
+    return tf.compat.v1.constant_initializer(identity + initial_bias)

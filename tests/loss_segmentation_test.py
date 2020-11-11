@@ -117,7 +117,7 @@ class OneHotTester(NiftyNetTestCase):
         with self.cached_session():
             labels = tf.constant([1, 2, 3, 0], dtype=tf.int64, name='labels')
             tf_one_hot = tf.one_hot(labels, depth=4)
-            niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 4))
+            niftynet_one_hot = tf.sparse.to_dense(labels_to_one_hot(labels, 4))
             self.assertAllEqual(tf_one_hot.eval(), niftynet_one_hot.eval())
 
     def test_one_hot(self):
@@ -129,7 +129,7 @@ class OneHotTester(NiftyNetTestCase):
         with self.cached_session():
             labels = tf.constant([[1, 2], [3, 4]])
             # import pdb; pdb.set_trace()
-            one_hot = tf.sparse_tensor_to_dense(
+            one_hot = tf.sparse.to_dense(
                 labels_to_one_hot(labels, 5)).eval()
             self.assertAllEqual(one_hot, ref)
 
@@ -291,8 +291,8 @@ class CrossEntropyTests(NiftyNetTestCase):
                     np.e ** 2 / (1 + np.e ** 2))))
 
             test_dense_loss = LossFunction(2, loss_type='CrossEntropy_Dense')
-            labels = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 2))
-            computed_cross_entropy = test_loss_func(predicted, tf.to_int32(labels))
+            labels = tf.sparse.to_dense(labels_to_one_hot(labels, 2))
+            computed_cross_entropy = test_loss_func(predicted, tf.cast(labels, dtype=tf.int32))
             self.assertAlmostEqual(
                 computed_cross_entropy.eval(),
                 -.5 * (np.log(np.e / (1 + np.e)) + np.log(

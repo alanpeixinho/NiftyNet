@@ -86,7 +86,7 @@ class GridWarperLayer(Layer):
         self._source_shape = tuple(source_shape)
         self._output_shape = tuple(output_shape)
         if len(self._output_shape) > len(self._source_shape):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Output domain dimensionality (%s) must be equal or '
                 'smaller than source domain dimensionality (%s)',
                 len(self._output_shape), len(self._source_shape))
@@ -100,11 +100,11 @@ class GridWarperLayer(Layer):
         Precomputes features
         (e.g. sampling patterns, unconstrained feature matrices).
         """
-        tf.logging.fatal('_create_features() should be implemented')
+        tf.compat.v1.logging.fatal('_create_features() should be implemented')
         raise NotImplementedError
 
     def layer_op(self, *args, **kwargs):
-        tf.logging.fatal('layer_op() should be implemented to warp self._psi')
+        tf.compat.v1.logging.fatal('layer_op() should be implemented to warp self._psi')
         raise NotImplementedError
 
     @property
@@ -184,11 +184,11 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             self._constraints = AffineWarpConstraints(constraints=constraints)
 
         if self._constraints.num_free_params == 0:
-            tf.logging.fatal('Transformation is fully constrained.')
+            tf.compat.v1.logging.fatal('Transformation is fully constrained.')
             raise ValueError
 
         if self._constraints.num_dim != num_dim:
-            tf.logging.fatal('Incompatible set of constraints provided: '
+            tf.compat.v1.logging.fatal('Incompatible set of constraints provided: '
                              'input grid shape and constraints have different '
                              'dimensionality.')
             raise ValueError
@@ -288,11 +288,11 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
           Error: If the input tensor size is not consistent
             with the constraints passed at construction time.
         """
-        inputs = tf.to_float(inputs)
+        inputs = tf.cast(inputs, dtype=tf.float32)
         batch_size, number_of_params = list(inputs.shape)
         input_dtype = inputs.dtype.as_numpy_dtype
         if number_of_params != self._constraints.num_free_params:
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'Input size is not consistent with constraint '
                 'definition: (N, %s) parameters expected '
                 '(where N is the batch size; > 1), but %s provided.',
@@ -376,7 +376,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             instance of AffineGridWarper.
         """
         if self._coeff_shape != [6]:
-            tf.logging.fatal('AffineGridWarper currently supports'
+            tf.compat.v1.logging.fatal('AffineGridWarper currently supports'
                              'inversion only for the 2D case.')
             raise NotImplementedError
 
@@ -413,9 +413,9 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
               A tensorflow graph performing the inverse affine transformation
               parametrized by the input coefficients.
             """
-            batch_size = tf.expand_dims(tf.shape(inputs)[0], 0)
+            batch_size = tf.expand_dims(tf.shape(input=inputs)[0], 0)
             constant_shape = tf.concat(
-                [batch_size, tf.convert_to_tensor((1,))], 0)
+                [batch_size, tf.convert_to_tensor(value=(1,))], 0)
 
             index = iter(range(6))
 
@@ -485,14 +485,14 @@ class AffineWarpConstraints(object):
         try:
             self._constraints = tuple(tuple(x) for x in constraints)
         except TypeError:
-            tf.logging.fatal('constraints must be a nested iterable.')
+            tf.compat.v1.logging.fatal('constraints must be a nested iterable.')
             raise TypeError
 
         # Number of rows
         self._num_dim = len(self._constraints)
         expected_num_cols = self._num_dim + 1
         if any(len(x) != expected_num_cols for x in self._constraints):
-            tf.logging.fatal(
+            tf.compat.v1.logging.fatal(
                 'The input list must define a Nx(N+1) matrix of constraints.')
             raise ValueError
 
@@ -527,7 +527,7 @@ class AffineWarpConstraints(object):
         if x is None or y is None:
             return x or y
         if x != y:
-            tf.logging.fatal('Incompatible set of constraints provided.')
+            tf.compat.v1.logging.fatal('Incompatible set of constraints provided.')
             raise ValueError
         return x
 

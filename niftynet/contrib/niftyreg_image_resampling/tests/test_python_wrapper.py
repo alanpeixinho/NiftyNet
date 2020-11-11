@@ -115,7 +115,7 @@ class WrapperResamplerTest(ResamplerTest):
                             warped = NiftyregImageResamplingLayer(interpolation=inter,
                                                                   boundary=bdy)
                             warped = warped(tfimg, tfdisp)
-                            dummy_cost = tf.reduce_mean(tf.pow(warped, 2))
+                            dummy_cost = tf.reduce_mean(input_tensor=tf.pow(warped, 2))
 
                             tgrad, refgrad = tft.compute_gradient(
                                 tfimg,
@@ -141,9 +141,9 @@ class WrapperResamplerTest(ResamplerTest):
 
             for code, inter in self.INTERPOLATIONS:
                 with self.session(use_gpu=use_gpu) as sess:
-                    img = tf.placeholder(tf.float32,
+                    img = tf.compat.v1.placeholder(tf.float32,
                                          shape=image_batch_shape)
-                    disp = tf.placeholder(tf.float32,
+                    disp = tf.compat.v1.placeholder(tf.float32,
                                           shape=disp_batch_shape)
 
                     warped = NiftyregImageResamplingLayer(interpolation=inter,

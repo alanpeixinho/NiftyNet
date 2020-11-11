@@ -4,7 +4,7 @@ import unittest
 
 import os
 import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import regularizers
+from tensorflow.keras import regularizers
 
 from niftynet.network.scalenet import ScaleNet
 from tests.niftynet_testcase import NiftyNetTestCase
@@ -20,7 +20,7 @@ class ScaleNetTest(NiftyNetTestCase):
         print(scalenet_layer.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
 
@@ -33,7 +33,7 @@ class ScaleNetTest(NiftyNetTestCase):
         print(scalenet_layer.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)
 
@@ -42,13 +42,13 @@ class ScaleNetTest(NiftyNetTestCase):
         x = tf.ones(input_shape)
 
         scalenet_layer = ScaleNet(num_classes=5,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.3))
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
 
@@ -57,13 +57,13 @@ class ScaleNetTest(NiftyNetTestCase):
         x = tf.ones(input_shape)
 
         scalenet_layer = ScaleNet(num_classes=5,
-                                  w_regularizer=regularizers.l2_regularizer(
+                                  w_regularizer=regularizers.L2(
                                       0.3))
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)
 

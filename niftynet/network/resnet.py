@@ -113,7 +113,7 @@ class ResNet(BaseNet):
 
         spatial_rank = layer_util.infer_spatial_rank(out)
         axis_to_avg = [dim + 1 for dim in range(spatial_rank)]
-        out = tf.reduce_mean(tf.nn.relu(layers.bn(out, is_training)),
+        out = tf.reduce_mean(input_tensor=tf.nn.relu(layers.bn(out, is_training)),
                              axis=axis_to_avg)
         return layers.fc(out)
 

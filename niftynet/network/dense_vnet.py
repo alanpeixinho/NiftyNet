@@ -275,27 +275,27 @@ class DenseVNet(BaseNet):
         output = LinearResizeLayer(input_tensor_spatial_size)(output)
 
         # Segmentation summary
-        seg_argmax = tf.to_float(tf.expand_dims(tf.argmax(output, -1), -1))
+        seg_argmax = tf.cast(tf.expand_dims(tf.argmax(input=output, axis=-1), -1), dtype=tf.float32)
         seg_summary = seg_argmax * (255. / self.num_classes - 1)
 
         # Image Summary
         norm_axes = list(range(1, n_spatial_dims + 1))
-        mean, var = tf.nn.moments(input_tensor, axes=norm_axes, keep_dims=True)
-        timg = tf.to_float(input_tensor - mean) / (tf.sqrt(var) * 2.)
+        mean, var = tf.nn.moments(x=input_tensor, axes=norm_axes, keepdims=True)
+        timg = tf.cast(input_tensor - mean, dtype=tf.float32) / (tf.sqrt(var) * 2.)
         timg = (timg + 1.) * 127.
-        single_channel = tf.reduce_mean(timg, -1, True)
+        single_channel = tf.reduce_mean(input_tensor=timg, axis=-1, keepdims=True)
         img_summary = tf.minimum(255., tf.maximum(0., single_channel))
 
         if n_spatial_dims == 2:
-            tf.summary.image(
-                tf.get_default_graph().unique_name('imgseg'),
+            tf.compat.v1.summary.image(
+                tf.compat.v1.get_default_graph().unique_name('imgseg'),
                 tf.concat([img_summary, seg_summary], 1),
-                5, [tf.GraphKeys.SUMMARIES])
+                5, [tf.compat.v1.GraphKeys.SUMMARIES])
         elif n_spatial_dims == 3:
             image3_axial(
-                tf.get_default_graph().unique_name('imgseg'),
+                tf.compat.v1.get_default_graph().unique_name('imgseg'),
                 tf.concat([img_summary, seg_summary], 1),
-                5, [tf.GraphKeys.SUMMARIES])
+                5, [tf.compat.v1.GraphKeys.SUMMARIES])
         else:
             raise NotImplementedError(
                 'Image Summary only supports 2D and 3D images')
@@ -328,10 +328,10 @@ class SpatialPriorBlock(TrainableLayer):
         """
         # The internal representation is probabilities so
         # that resampling makes sense
-        prior = tf.get_variable('prior',
+        prior = tf.compat.v1.get_variable('prior',
                                 shape=self.prior_shape,
-                                initializer=tf.constant_initializer(1))
-        return tf.log(LinearResizeLayer(self.output_shape)(prior))
+                                initializer=tf.compat.v1.constant_initializer(1))
+        return tf.math.log(LinearResizeLayer(self.output_shape)(prior))
 
 
 class DenseFeatureStackBlock(TrainableLayer):

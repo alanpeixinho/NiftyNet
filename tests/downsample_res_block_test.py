@@ -31,7 +31,7 @@ class DownsampleResBlockTest(NiftyNetTestCase):
         output_data = downsample_layer(input_data)
         print(downsample_layer)
         with self.cached_session() as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(output_shape, out[0].shape)
 

@@ -23,7 +23,7 @@ class Constant(object):
         create an instance of the initializer
         """
         value = float(args.get('value', 0.0))
-        return tf.constant_initializer(value)
+        return tf.compat.v1.constant_initializer(value)
 
 
 class Zeros(object):
@@ -37,7 +37,7 @@ class Zeros(object):
         """
         create an instance of the initializer
         """
-        return tf.constant_initializer(0.0)
+        return tf.compat.v1.constant_initializer(0.0)
 
 
 class Ones(object):
@@ -51,7 +51,7 @@ class Ones(object):
         """
         create an instance of the initializer
         """
-        return tf.constant_initializer(1.0)
+        return tf.compat.v1.constant_initializer(1.0)
 
 
 class UniformUnitScaling(object):
@@ -66,7 +66,7 @@ class UniformUnitScaling(object):
         create an instance of the initializer
         """
         factor = float(args.get('factor', 1.0))
-        return tf.uniform_unit_scaling_initializer(factor, seed=SEED)
+        return tf.compat.v1.keras.initializers.VarianceScaling(scale=factor, seed=SEED, distribution="uniform")
 
 
 class Orthogonal(object):
@@ -81,7 +81,7 @@ class Orthogonal(object):
         create an instance of the initializer
         """
         gain = float(args.get('gain', 1.0))
-        return tf.orthogonal_initializer(gain, seed=SEED)
+        return tf.compat.v1.orthogonal_initializer(gain, seed=SEED)
 
 
 class VarianceScaling(object):
@@ -100,7 +100,7 @@ class VarianceScaling(object):
         assert (mode in ["fan_in", "fan_out", "fan_avg"])
         distribution = args.get('distribution', "normal")
         assert (distribution in ["normal", "uniform"])
-        return tf.variance_scaling_initializer(scale,
+        return tf.compat.v1.variance_scaling_initializer(scale,
                                                mode,
                                                distribution,
                                                seed=SEED)
@@ -118,7 +118,7 @@ class GlorotNormal(object):
         """
         create an instance of the initializer
         """
-        return tf.glorot_normal_initializer(seed=SEED)
+        return tf.compat.v1.glorot_normal_initializer(seed=SEED)
 
 
 class GlorotUniform(object):
@@ -133,7 +133,7 @@ class GlorotUniform(object):
         """
         create an instance of the initializer
         """
-        return tf.glorot_uniform_initializer(seed=SEED)
+        return tf.compat.v1.glorot_uniform_initializer(seed=SEED)
 
 
 class HeUniform(object):

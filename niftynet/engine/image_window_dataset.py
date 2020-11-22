@@ -195,8 +195,6 @@ class ImageWindowDataset(Layer):
             # here we initialise the dataset and iterator
             self.init_dataset()
             self.iterator = tf.compat.v1.data.make_one_shot_iterator(self.dataset)
-            # self.iterator = tf.data.Iterator.from_structure(
-            #     self.dataset.output_types, self.dataset.output_shapes)
 
         window_output = self.iterator.get_next()
         for name in window_output:

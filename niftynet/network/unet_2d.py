@@ -170,4 +170,4 @@ class CropConcat(Layer):
         tensor_a = Crop(border=crop_border)(tensor_a)
         output_spatial_shape = tensor_b.shape[1:-1]
         tensor_a = Resize(new_size=output_spatial_shape)(tensor_a)
-        return Wise('CONCAT')(tensor_a, tensor_b)
+        return ElementWise('CONCAT')(tensor_a, tensor_b)

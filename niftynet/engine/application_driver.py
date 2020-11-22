@@ -203,15 +203,6 @@ class ApplicationDriver(object):
 
         with tf.compat.v1.Session(config=tf_config(self.cuda_memory), graph=graph) as sess:
             try:
-
-                #import pdb; pdb.set_trace()
-
-
-                #MODEL_PATH = os.path.join(self.model_dir, 'models')
-                #snapshot_fpath = tf.train.latest_checkpoint(MODEL_PATH)
-                #sess = tf.get_default_session()
-
-        
                 init = tf.compat.v1.global_variables_initializer()
                 sess.run(init)
 

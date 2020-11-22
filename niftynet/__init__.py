@@ -15,6 +15,12 @@ try:
     import os
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
     import tensorflow as tf
+    from tensorflow.python.framework.ops import disable_eager_execution
+    from tensorflow.compat.v1 import disable_v2_behavior
+
+    disable_eager_execution()
+    disable_v2_behavior()
+
 except ImportError:
     raise ImportError('NiftyNet is based on TensorFlow, which'
                       ' does not seem to be installed on your'
@@ -25,7 +31,7 @@ except ImportError:
 try:
     from distutils.version import LooseVersion
 
-    minimal_required_version = LooseVersion("1.5")
+    minimal_required_version = LooseVersion("2.0")
     tf_version = LooseVersion(tf.__version__)
     if tf_version < minimal_required_version:
         tf.compat.v1.logging.fatal('TensorFlow %s or later is required.'

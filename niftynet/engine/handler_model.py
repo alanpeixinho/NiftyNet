@@ -108,7 +108,7 @@ class ModelRestorer(object):
                 len(tf.compat.v1.global_variables()),
                 checkpoint, ',\n'.join(var_names))
         else:
-            to_restore = tf.global_variables()
+            to_restore = tf.compat.v1.global_variables()
             to_randomise = []
 
         print('restore: ', to_restore)

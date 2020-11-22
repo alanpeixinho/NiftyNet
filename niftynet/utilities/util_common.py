@@ -489,8 +489,6 @@ def tf_config(cuda_memory):
     config.log_device_placement = False
     config.allow_soft_placement = True
 
-    print(config)
-
     return config
 
 

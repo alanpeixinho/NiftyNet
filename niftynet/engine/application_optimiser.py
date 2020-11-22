@@ -14,8 +14,11 @@ specify `--optimiser newclass.NewOptimisor`
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tensorflow.train.experimental import enable_mixed_precision_graph_rewrite
+#from tensorflow.train.experimental import enable_mixed_precision_graph_rewrite
 
+
+def enable_mixed_precision_graph_rewrite(x):
+    return x
 
 # pylint: disable=too-few-public-methods
 

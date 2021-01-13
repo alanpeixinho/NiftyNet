@@ -392,7 +392,7 @@ def weighted_hausdorff_loss(prediction, ground_truth, weight_map = None):
     all_img_locations = tf.convert_to_tensor(value=cartesian_product,
                                                        dtype=tf.float32)
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
 
 #     y_true = tf.reshape(y_true, (n_pixels,))

@@ -459,6 +459,7 @@ def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
     """
     # pylint: disable=no-name-in-module
     from tensorflow.python.client import device_lib
+    #import pdb; pdb.set_trace()
     devices = device_lib.list_local_devices()
     n_local_gpus = sum([x.device_type == 'GPU' for x in devices])
     if n_devices <= 0:  # user specified no gpu at all

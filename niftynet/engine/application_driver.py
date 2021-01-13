@@ -85,6 +85,9 @@ class ApplicationDriver(object):
         :return:
         """
         try:
+            print('8======D lets go')
+            print(workflow_param.keys())
+            print(data_param.keys())
             system_param = workflow_param.get('SYSTEM', None)
             net_param = workflow_param.get('NETWORK', None)
             train_param = workflow_param.get('TRAINING', None)

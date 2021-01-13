@@ -31,7 +31,7 @@ except ImportError:
 try:
     from distutils.version import LooseVersion
 
-    minimal_required_version = LooseVersion("2.0")
+    minimal_required_version = LooseVersion("2.3")
     tf_version = LooseVersion(tf.__version__)
     if tf_version < minimal_required_version:
         tf.compat.v1.logging.fatal('TensorFlow %s or later is required.'

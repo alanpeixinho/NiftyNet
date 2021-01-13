@@ -75,7 +75,8 @@ NIFTYNET_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 
 # pylint: disable=too-many-branches
-def run():
+#if no action parameter is specified, look for argv action command
+def run(overwrite_args = {}, raise_error_unknown_args = True):
     """
     meta_parser is first used to find out location
     of the configuration file. Based on the application_name
@@ -93,34 +94,41 @@ def run():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent(EPILOG_STRING))
     version_string = get_niftynet_version_string()
-    meta_parser.add_argument("action",
-                             help="train networks, run inferences "
-                                  "or evaluate inferences",
-                             metavar='ACTION',
-                             choices=list(ACTIONS))
+    if overwrite_args.get('action', None) is None:
+        meta_parser.add_argument("action",
+                                 help="train networks, run inferences "
+                                      "or evaluate inferences",
+                                 metavar='ACTION',
+                                 choices=list(ACTIONS))
     meta_parser.add_argument("-v", "--version",
                              action='version',
                              version=version_string)
-    meta_parser.add_argument("-c", "--conf",
-                             help="specify configurations from a file",
-                             metavar="CONFIG_FILE")
-    meta_parser.add_argument("-a", "--application_name",
-                             help="specify an application module name",
-                             metavar='APPLICATION_NAME',
-                             default="")
+    if overwrite_args.get('config_file', None) is None:
+        meta_parser.add_argument("-c", "--conf",
+                                 help="specify configurations from a file",
+                                 metavar="CONFIG_FILE")
+    if overwrite_args.get('app', None) is None:
+        meta_parser.add_argument("-a", "--application_name",
+                                 help="specify an application module name",
+                                 metavar='APPLICATION_NAME',
+                                 default="")
 
     meta_args, args_from_cmdline = meta_parser.parse_known_args()
     print(version_string)
 
     # read configurations, to be parsed by sections
-    config_file_name = __resolve_config_file_path(meta_args.conf)
+    if overwrite_args.get('config_file', None) is None:
+        config_file_name = __resolve_config_file_path(meta_args.conf)
+    else:
+        config_file_name = __resolve_config_file_path(overwrite_args['config_file'])
     config = NiftyNetLaunchConfig()
     config.read([config_file_name])
 
     # infer application name from command
     app_name = None
     try:
-        parser_prog = meta_parser.prog.replace('.py', '')
+        pname = overwrite_args.get('app', meta_parser.prog)
+        parser_prog = pname.replace('.py', '')
         app_name = parser_prog if parser_prog in SUPPORTED_APP \
             else meta_args.application_name
         assert app_name
@@ -163,9 +171,20 @@ def run():
                                         args_from_cmdline,
                                         app_module.REQUIRED_CONFIG_SECTION)
         all_args[section] = section_args
+        dict_args = vars(section_args)
+        overwrite_args_keys = overwrite_args[section.lower()].keys() if section.lower() in overwrite_args else None
+
+
+        if overwrite_args_keys is not None:
+            #if there is an overwriten argument passed to the function
+            #ignore both config file and argv
+            for arg_key in dict_args:
+                if arg_key in overwrite_args_keys:
+                    dict_args[arg_key] = overwrite_args[section.lower()][arg_key]
 
     # check if any args from command line not recognised
-    _check_cmd_remaining_keywords(list(args_from_cmdline))
+    if raise_error_unknown_args:
+        _check_cmd_remaining_keywords(list(args_from_cmdline))
 
     # split parsed results in all_args
     # into dictionaries of system_args and input_data_args
@@ -203,11 +222,17 @@ def run():
     # preserve ``config_file`` and ``action parameter`` from the meta_args
     system_args['CONFIG_FILE'] = argparse.Namespace(path=config_file_name)
     # mapping the captured action argument to a string in ACTIONS
-    system_args['SYSTEM'].action = \
-        look_up_operations(meta_args.action, ACTIONS)
-    if not system_args['SYSTEM'].model_dir:
-        system_args['SYSTEM'].model_dir = os.path.join(
-            os.path.dirname(config_file_name), 'model')
+    if overwrite_args.get('action', None) is None:
+        system_args['SYSTEM'].action = \
+            look_up_operations(meta_args.action, ACTIONS)
+    else:
+        system_args['SYSTEM'].action = look_up_operations(overwrite_args['action'], ACTIONS)
+    if overwrite_args.get('model_dir', None) is None:
+        if not system_args['SYSTEM'].model_dir:
+            system_args['SYSTEM'].model_dir = os.path.join(
+                os.path.dirname(config_file_name), 'model')
+    else:
+        system_args['SYSTEM'].model_dir = overwrite_args['model_dir']
     return system_args, input_data_args
 
 
@@ -234,6 +259,7 @@ def _parse_arguments_by_section(parents,
     :return: parsed parameters of the section and unknown
         commandline params.
     """
+    #import pdb; pdb.set_trace()
     section_parser = argparse.ArgumentParser(
         parents=parents,
         description=__doc__,

@@ -555,7 +555,7 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     ground_truth = tf.cast(ground_truth, tf.int32)
 
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        logits=prediction, labels=ground_truth)
+        logits=prediction, labels=tf.stop_gradient(ground_truth))
 
     if weight_map is None:
         return tf.reduce_mean(input_tensor=entropy)

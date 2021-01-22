@@ -74,7 +74,11 @@ class ConvLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.shape.as_list()
+
+        print_op = tf.print(input_tensor, 'Input tensor convolution: ', input_tensor)
+
+        with tf.control_dependencies([print_op]):
+            input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 

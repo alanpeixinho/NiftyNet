@@ -14,10 +14,13 @@ specify `--optimiser newclass.NewOptimisor`
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-#from tensorflow.train.experimental import enable_mixed_precision_graph_rewrite
+
+#deprecated
+#from tensorflow.compat.v1.train.experimental import enable_mixed_precision_graph_rewrite
 
 
 def enable_mixed_precision_graph_rewrite(x):
+#    return tf.keras.mixed_precision.experimental.LossScaleOptimizer(x, 'dynamic')
     return x
 
 # pylint: disable=too-few-public-methods
@@ -37,7 +40,12 @@ class Adam(object):
             beta1=0.9,
             beta2=0.999,
             epsilon=1e-08,
-            use_locking=False, name='Adam')
+            use_locking=True, name='Adam')
+
+        #opt = tf.keras.optimizers.Adam(
+        #    learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=False,
+        #    name='Adam')
+
 
         return enable_mixed_precision_graph_rewrite(opt)
 

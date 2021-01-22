@@ -31,6 +31,7 @@ class Layer(object):
         raise NotImplementedError
 
     def __call__(self, *args, **kwargs):
+        tf.print('Name: ', self.name)
         return self._op(*args, **kwargs)
 
     def __str__(self):

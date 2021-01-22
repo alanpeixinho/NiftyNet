@@ -13,13 +13,21 @@ from __future__ import unicode_literals
 # and fail gracefully if not.
 try:
     import os
-    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-    import tensorflow as tf
-    from tensorflow.python.framework.ops import disable_eager_execution
-    from tensorflow.compat.v1 import disable_v2_behavior
+    #os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+    #os.environ['TF_GPU_THREAD_MODE']='gpu_private'
+    #os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1'
+    #os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit'
 
-    disable_eager_execution()
-    disable_v2_behavior()
+    import pdb; pdb.set_trace()
+    import tensorflow as tf
+    #tf.config.experimental.set_synchronous_execution(True)
+    #from tensorflow.python.framework.ops import disable_eager_execution, enable_eager_execution
+    #from tensorflow.compat.v1 import disable_v2_behavior
+    #from tensorflow.compat.v1 import enable_eager_execution
+    #enable_eager_execution()
+    #disable_v2_behavior()
+    #tf.config.run_functions_eagerly(True)
+    
 
 except ImportError:
     raise ImportError('NiftyNet is based on TensorFlow, which'

@@ -485,6 +485,7 @@ def split_filename(file_name):
     return pth, fname, ext
 
 
+#@tf.function
 def squeeze_spatial_temporal_dim(tf_tensor):
     """
     Given a tensorflow tensor, ndims==6 means::

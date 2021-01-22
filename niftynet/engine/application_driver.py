@@ -239,6 +239,12 @@ class ApplicationDriver(object):
                 #init_op = tf.variables_initializer(to_randomise)
                 #tf.get_default_session().run(init_op)
 
+                import pdb; pdb.set_trace()
+                #options = tf.profiler.experimental.ProfilerOptions(host_tracer_level = 3,
+                #                                   python_tracer_level = 1,
+                #                                   device_tracer_level = 1)
+                #tf.profiler.experimental.start('/home/ABTLUS/alan.peixinho/profile_logs')
+
                 sess = tf.compat.v1.get_default_session()
                 #import pdb; pdb.set_trace()
 
@@ -277,15 +283,20 @@ class ApplicationDriver(object):
                 else:
                     # create a iteration message generator and
                     # iteratively run the graph (the main engine loop)
+                    tf.print('before main pdb')
+                    import pdb; pdb.set_trace()
                     iteration_messages = self._generator(**vars(self))()
+                    tf.print('iteration messages', iteration_messages)
                     ApplicationDriver.loop(
                     application=application,
                     iteration_messages=iteration_messages,
                     loop_status=loop_status)
 
             except KeyboardInterrupt:
+                import pdb; pdb.set_trace()
                 tf.compat.v1.logging.warning('User cancelled application')
             except (tf.errors.OutOfRangeError, EOFError):
+                import pdb; pdb.set_trace()
                 if not loop_status.get('normal_exit', False):
                     # reached the end of inference Dataset
                     loop_status['normal_exit'] = True
@@ -299,7 +310,9 @@ class ApplicationDriver(object):
                 tf.compat.v1.logging.error('This model could not be allocated on this device.')
                 final_user_message = ['Failure cause = GPU OUT OF MEMORY.', 'Not enough memory to build your model.', 'Try reducing batch/input size to reduce memory footprint.']
                 abort = True
-            except RuntimeError:
+            except RuntimeError as e:
+                print('=================> Runtime Error ...')
+                import pdb; pdb.set_trace()
                 import sys
                 import traceback
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -313,6 +326,9 @@ class ApplicationDriver(object):
                     iter_msg = IterationMessage()
                     iter_msg.current_iter = loop_status.get('current_iter', -1)
                     SESS_FINISHED.send(application, iter_msg=iter_msg)
+
+                    #tf.profiler.experimental.stop()
+
 
         application.stop()
         if not loop_status.get('normal_exit', False):
@@ -336,12 +352,14 @@ class ApplicationDriver(object):
 
         :return:
         """
+        import pdb; pdb.set_trace()
+
         graph = tf.Graph()
         main_device = device_string(num_gpus, 0, False, is_training_action)
         outputs_collector = OutputsCollector(n_devices=max(num_gpus, 1))
         gradients_collector = GradientsCollector(n_devices=max(num_gpus, 1))
         # start constructing the graph, handling training and inference cases
-        with graph.as_default(), tf.device(main_device):
+        with tf.device(main_device):
             # initialise sampler
             with tf.compat.v1.name_scope('Sampler'):
                 application.initialise_sampler()
@@ -361,6 +379,7 @@ class ApplicationDriver(object):
                 scope_string = 'worker_{}'.format(gpu_id)
                 with tf.compat.v1.name_scope(scope_string), tf.device(worker_device):
                     # setup network for each of the multiple devices
+                    tf.print('Connect Data and network outputs collector <-> gradients_collector')
                     application.connect_data_and_network(
                         outputs_collector, gradients_collector)
             with tf.compat.v1.name_scope('MergeOutputs'):

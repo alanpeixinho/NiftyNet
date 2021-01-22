@@ -63,6 +63,7 @@ def average_multi_opt_gradients(multi_device_gradients):
     return average_gradients(multi_device_gradients)
 
 
+#@tf.function
 def average_gradients(multi_device_gradients):
     """
     the input gradients are grouped by device,
@@ -75,6 +76,8 @@ def average_gradients(multi_device_gradients):
     #   len(multi_device_gradients[0]),
     #   len(multi_device_gradients[0][0]),
     #   len(multi_device_gradients[0][0][0]))
+
+    tf.print('average this chiiiiiiiiittttttiiii')
 
     if len(multi_device_gradients) == 1:
         # only one device, so we get rid of the first level list

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
+#from tensorflow.keras.layers import Lambda
+
 import numpy
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import \
@@ -156,6 +158,7 @@ class SegmentationApplication(BaseApplication):
         ]
         # initialise training data augmentation layers
         augmentation_layers = []
+
         if self.is_training:
             train_param = self.action_param
             self.patience = train_param.patience
@@ -208,6 +211,12 @@ class SegmentationApplication(BaseApplication):
                     raise ValueError("Number of unique labels must be equal to "
                                      "number of classes (check histogram_ref file)")
 
+    #def _init_samplers(self, samplers):
+    #    for l in samplers:
+    #        for s in l:
+    #            s.run_threads()
+
+
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
             reader=reader,
@@ -216,6 +225,7 @@ class SegmentationApplication(BaseApplication):
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
+        #self._init_samplers(self.sampler)
 
     def initialise_weighted_sampler(self):
         self.sampler = [[WeightedSampler(
@@ -314,11 +324,29 @@ class SegmentationApplication(BaseApplication):
                                  gradients_collector=None):
 
         print('connect data and network')
+        #@tf.function
         def switch_sampler(for_training):
-            with tf.compat.v1.name_scope('train' if for_training else 'validation'):
-                sampler = self.get_sampler()[0][0 if for_training else -1]
-                return sampler.pop_batch_op()
+            print('==================> switch sampler ......')
+            print('eagerly? ', tf.compat.v1.executing_eagerly())
+            print('eagerly ouside? ', tf.compat.v1.executing_eagerly_outside_functions())
+            
+            tf.print('==================> tf switch sampler ......')
+            tf.print('tf eagerly? ', tf.compat.v1.executing_eagerly())
+            tf.print('tf eagerly ouside? ', tf.compat.v1.executing_eagerly_outside_functions())
+           
+            import pdb; pdb.set_trace()
 
+            with tf.device('/cpu:0'):
+                with tf.compat.v1.name_scope('train' if for_training else 'validation'):
+                    sampler = self.get_sampler()[0][0 if for_training else -1]
+                    if sampler.iterator is None:
+                        sampler.dataset = sampler.init_dataset()
+                        sampler.iterator = iter(sampler.dataset)
+                    batch = sampler.pop_batch_op()
+                    tf.print('got batch ...')
+                    return batch
+
+        #@tf.function
         def mixup_switch_sampler(for_training):
             # get first set of samples
             d_dict = switch_sampler(for_training=for_training)
@@ -367,21 +395,41 @@ class SegmentationApplication(BaseApplication):
 
             return d_dict
 
+
+        #@tf.function
+        def check_validation(validation, sampler):
+            #if not validation:
+            #   data_dict = sampler(for_training=True)
+            #else:
+            #   data_dict = sampler(for_training=False)
+            #return data_dict
+            return tf.cond(validation, true_fn=lambda: sampler(for_training=False), false_fn=lambda: sampler(for_training=True))
+
         if self.is_training:
+            tf.print('Get data dict')
             if not self.segmentation_param.do_mixup:
-                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
-                                    true_fn=lambda: switch_sampler(for_training=True),
-                                    false_fn=lambda: switch_sampler(for_training=False))
+                #data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                #                    true_fn=lambda: switch_sampler(for_training=True),
+                #                    false_fn=lambda: switch_sampler(for_training=False))
+            
+                data_dict = check_validation(self.is_validation, switch_sampler)
             else:
                 # mix up the samples if not in validation phase
-                data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
-                                    true_fn=lambda: mixup_switch_sampler(for_training=True),
-                                    false_fn=lambda: mixup_switch_sampler(for_training=False))  # don't mix the validation
-
+                #data_dict = tf.cond(pred=tf.logical_not(self.is_validation),
+                #                    true_fn=lambda: mixup_switch_sampler(for_training=True),
+                #                    false_fn=lambda: mixup_switch_sampler(for_training=False))  # don't mix the validation
+                
+                data_dict = check_validation(self.is_validation, mixup_switch_sampler)
+            tf.print('Got it')
             image = tf.cast(data_dict['image'], tf.float32)
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
+
+            tf.print('image casted')
+
+            tf.print('***** Run net')
             net_out = self.net(image, **net_args)
+            tf.print('***** Done net')
 
             with tf.compat.v1.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -404,6 +452,7 @@ class SegmentationApplication(BaseApplication):
             else:
                 loss = data_loss
 
+            import pdb; pdb.set_trace()
             # Get all vars
             to_optimise = tf.compat.v1.trainable_variables()
             vars_to_freeze = \
@@ -422,13 +471,16 @@ class SegmentationApplication(BaseApplication):
                     len(tf.compat.v1.trainable_variables()),
                     vars_to_freeze)
 
-            grads = self.optimiser.compute_gradients(
+            grads_vars = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise)
+
+            #return only variables, but only for those that have a grad
+            #vars_with_grads = [v for g, v in grads_vars if g is not None]
 
             self.total_loss = loss
 
             # collecting gradients variables
-            gradients_collector.add_to_collection([grads])
+            gradients_collector.add_to_collection([grads_vars])
 
             # collecting output variables
             outputs_collector.add_to_collection(

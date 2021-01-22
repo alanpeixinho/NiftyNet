@@ -93,14 +93,18 @@ def _apply_gradients(optimiser, gradients):
     :return:
     """
 
-    grad_list_depth = util_common.list_depth_count(gradients)
-    if grad_list_depth == 3:
-        # nested depth 3 means: gradients list is nested in terms of:
-        # list of networks -> list of network variables
-        return [optimiser.apply_gradients(grad) for grad in gradients]
-    elif grad_list_depth == 2:
-        # nested depth 2 means:
-        # gradients list is a list of variables
-        return optimiser.apply_gradients(gradients)
-    raise NotImplementedError(
-        'This app supports updating a network, or a list of networks.')
+    print('Gradients: ', gradients)
+    print_op = tf.print('tf.Gradients: ', gradients)
+
+    with tf.control_dependencies([print_op]):
+        grad_list_depth = util_common.list_depth_count(gradients)
+        if grad_list_depth == 3:
+            # nested depth 3 means: gradients list is nested in terms of:
+            # list of networks -> list of network variables
+            return [optimiser.apply_gradients(grad) for grad in gradients]
+        elif grad_list_depth == 2:
+            # nested depth 2 means:
+            # gradients list is a list of variables
+            return optimiser.apply_gradients(gradients)
+        raise NotImplementedError(
+            'This app supports updating a network, or a list of networks.')

@@ -37,4 +37,6 @@ class ConsoleLogger(object):
         :param msg: an iteration message instance
         :return:
         """
-        tf.compat.v1.logging.info(msg['iter_msg'].to_console_string())
+        if msg['iter_msg'].current_iter % 100 == 0:
+            tf.compat.v1.logging.info(msg['iter_msg'].to_console_string())
+

@@ -2,36 +2,41 @@
 """This module loads images from csv files and outputs numpy arrays."""
 from __future__ import absolute_import, division, print_function
 
-from copy import deepcopy
 import argparse
+from copy import deepcopy
+
 import numpy as np
 import pandas
 import tensorflow as tf
 from six import string_types
 
-from niftynet.io.misc_io import dtype_casting
-from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
+from niftynet.io.image_sets_partitioner import (COLUMN_UNIQ_ID,
+                                                ImageSetsPartitioner)
 from niftynet.io.image_type import ImageFactory
-from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
+from niftynet.io.misc_io import dtype_casting
+from niftynet.layer.base_layer import (DataDependentLayer, Layer,
+                                       RandomisedLayer)
+from niftynet.utilities import util_common
 from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import (ParserNamespace,
+                                            look_up_operations,
+                                            print_progress_bar)
 
 DEFAULT_INTERP_ORDER = 1
 SUPPORTED_DATA_SPEC = {
-
     'csv_file', 'path_to_search', 'csv_data_file', 'filename_removefromid',
-    'filename_contains', 'filename_not_contains', 'to_ohe',
-    'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
+    'filename_contains', 'filename_not_contains', 'to_ohe', 'interp_order',
+    'loader', 'pixdim', 'axcodes', 'spatial_window_size'
+}
 
 
 def infer_tf_dtypes(image_array):
     """
     Choosing a suitable tf dtype based on the dtype of input numpy array.
     """
-    return dtype_casting(
-        image_array.dtype[0], image_array.interp_order[0], as_tf=True)
+    return dtype_casting(image_array.dtype[0],
+                         image_array.interp_order[0],
+                         as_tf=True)
 
 
 class ImageReader(Layer):
@@ -132,18 +137,19 @@ class ImageReader(Layer):
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
-        valid_names = [name for name in self.names
-                       if task_param.get(name, None)]
+        valid_names = [
+            name for name in self.names if task_param.get(name, None)
+        ]
         if not valid_names:
-            tf.compat.v1.logging.fatal("Reader requires task input keywords %s, but "
-                             "not exist in the config file.\n"
-                             "Available task keywords: %s",
-                             self.names, list(task_param))
+            tf.compat.v1.logging.fatal(
+                "Reader requires task input keywords %s, but "
+                "not exist in the config file.\n"
+                "Available task keywords: %s", self.names, list(task_param))
             raise ValueError
         self.names = valid_names
 
-        self._input_sources = dict((name, task_param.get(name))
-                                   for name in self.names)
+        self._input_sources = dict(
+            (name, task_param.get(name)) for name in self.names)
         required_sections = \
             sum([list(task_param.get(name)) for name in self.names], [])
 
@@ -152,9 +158,10 @@ class ImageReader(Layer):
                 if (file_list is None) or \
                         (required not in list(file_list)) or \
                         (file_list[required].isnull().all()):
-                    tf.compat.v1.logging.fatal('Reader required input section '
-                                     'name [%s], but in the filename list '
-                                     'the column is empty.', required)
+                    tf.compat.v1.logging.fatal(
+                        'Reader required input section '
+                        'name [%s], but in the filename list '
+                        'the column is empty.', required)
                     raise ValueError
             except (AttributeError, TypeError, ValueError):
                 tf.compat.v1.logging.fatal(
@@ -163,10 +170,10 @@ class ImageReader(Layer):
                     'section name [%s] as a column name.', required)
                 if required_sections:
                     tf.compat.v1.logging.fatal('Reader requires section(s): %s',
-                                     required_sections)
+                                               required_sections)
                 if file_list is not None:
-                    tf.compat.v1.logging.fatal('Configuration input sections are: %s',
-                                     list(file_list))
+                    tf.compat.v1.logging.fatal(
+                        'Configuration input sections are: %s', list(file_list))
                 raise
 
         self.output_list, self._file_list = _filename_to_image_list(
@@ -174,8 +181,8 @@ class ImageReader(Layer):
         for name in self.names:
             tf.compat.v1.logging.info(
                 'Image reader: loading %d subjects '
-                'from sections %s as input [%s]',
-                len(self.output_list), self.input_sources[name], name)
+                'from sections %s as input [%s]', len(self.output_list),
+                self.input_sources[name], name)
         return self
 
     def prepare_preprocessors(self):
@@ -263,8 +270,9 @@ class ImageReader(Layer):
             raise RuntimeError
         if not self._spatial_ranks:
             first_image = self.output_list[0]
-            self._spatial_ranks = {field: first_image[field].spatial_rank
-                                   for field in self.names}
+            self._spatial_ranks = {
+                field: first_image[field].spatial_rank for field in self.names
+            }
         return self._spatial_ranks
 
     @property
@@ -288,8 +296,9 @@ class ImageReader(Layer):
             raise RuntimeError
         if not self._shapes:
             first_image = self.output_list[0]
-            self._shapes = {field: first_image[field].shape
-                            for field in self.names}
+            self._shapes = {
+                field: first_image[field].shape for field in self.names
+            }
         return self._shapes
 
     @property
@@ -303,8 +312,10 @@ class ImageReader(Layer):
             raise RuntimeError
         if not self._dtypes:
             first_image = self.output_list[0]
-            self._dtypes = {field: infer_tf_dtypes(first_image[field])
-                            for field in self.names}
+            self._dtypes = {
+                field: infer_tf_dtypes(first_image[field])
+                for field in self.names
+            }
         return self._dtypes
 
     @property
@@ -358,7 +369,8 @@ class ImageReader(Layer):
         try:
             return self._file_list.iloc[image_index][COLUMN_UNIQ_ID]
         except KeyError:
-            tf.compat.v1.logging.warning('Unknown subject id in reader file list.')
+            tf.compat.v1.logging.warning(
+                'Unknown subject id in reader file list.')
             raise
 
     def get_image_index(self, subject_id):
@@ -379,7 +391,8 @@ class ImageReader(Layer):
                 return self._file_list.iloc[:].to_dict()
             return self._file_list.iloc[image_index].to_dict()
         except (KeyError, AttributeError):
-            tf.compat.v1.logging.warning('Unknown subject id in reader file list.')
+            tf.compat.v1.logging.warning(
+                'Unknown subject id in reader file list.')
             raise
 
 
@@ -392,15 +405,17 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     valid_idx = []
     for idx in range(len(file_list)):
         # create image instance for each subject
-        print_progress_bar(idx, len(file_list),
+        print_progress_bar(idx,
+                           len(file_list),
                            prefix='reading datasets headers',
-                           decimals=1, length=10, fill='*')
+                           decimals=1,
+                           length=10,
+                           fill='*')
 
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            _dict[field] = _create_image(
-                file_list, idx, modalities, data_param)
+            _dict[field] = _create_image(file_list, idx, modalities, data_param)
 
         # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
@@ -431,8 +446,10 @@ def _create_image(file_list, idx, modalities, data_param):
     """
     try:
         file_path = tuple(file_list.iloc[idx][mod] for mod in modalities)
-        any_missing = any([pandas.isnull(file_name) or not bool(file_name)
-                           for file_name in file_path])
+        any_missing = any([
+            pandas.isnull(file_name) or not bool(file_name)
+            for file_name in file_path
+        ])
         if any_missing:
             # todo: enable missing modalities again
             # the file_path of a multimodal image will contain `nan`, e.g.
@@ -444,8 +461,8 @@ def _create_image(file_list, idx, modalities, data_param):
         for mod in modalities:
             mod_spec = data_param[mod] \
                 if isinstance(data_param[mod], dict) else vars(data_param[mod])
-            interp_order.append(mod_spec.get('interp_order',
-                                             DEFAULT_INTERP_ORDER))
+            interp_order.append(
+                mod_spec.get('interp_order', DEFAULT_INTERP_ORDER))
             pixdim.append(mod_spec.get('pixdim', None))
             axcodes.append(mod_spec.get('axcodes', None))
             loader.append(mod_spec.get('loader', None))
@@ -453,8 +470,8 @@ def _create_image(file_list, idx, modalities, data_param):
     except KeyError:
         tf.compat.v1.logging.fatal(
             "Specified modality names %s "
-            "not found in config: input sections %s.",
-            modalities, list(data_param))
+            "not found in config: input sections %s.", modalities,
+            list(data_param))
         raise
     except AttributeError:
         tf.compat.v1.logging.fatal(
@@ -462,12 +479,14 @@ def _create_image(file_list, idx, modalities, data_param):
             "Reader must be initialised with a dataframe as file_list.")
         raise
 
-    image_properties = {'file_path': file_path,
-                        'name': modalities,
-                        'interp_order': interp_order,
-                        'output_pixdim': pixdim,
-                        'output_axcodes': axcodes,
-                        'loader': loader}
+    image_properties = {
+        'file_path': file_path,
+        'name': modalities,
+        'interp_order': interp_order,
+        'output_pixdim': pixdim,
+        'output_axcodes': axcodes,
+        'loader': loader
+    }
     return ImageFactory.create_instance(**image_properties)
 
 
@@ -485,13 +504,13 @@ def param_to_dict(input_data_param):
                 'or a dictionary of: {"modality_name": '\
                 'niftynet.utilities.util_common.ParserNamespace}'
     data_param = deepcopy(input_data_param)
-    if isinstance(data_param, (ParserNamespace, argparse.Namespace)):
+    if util_common.is_namespace(data_param):
         data_param = vars(data_param)
     if not isinstance(data_param, dict):
         raise ValueError(error_msg)
     for mod in data_param:
         mod_param = data_param[mod]
-        if isinstance(mod_param, (ParserNamespace, argparse.Namespace)):
+        if util_common.is_namespace(mod_param):
             dict_param = vars(mod_param)
         elif isinstance(mod_param, dict):
             dict_param = mod_param

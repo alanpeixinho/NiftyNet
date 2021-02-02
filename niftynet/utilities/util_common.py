@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
+import argparse
 import datetime
 import os
+import random
 import re
 from functools import partial
 
@@ -13,7 +13,7 @@ import tensorflow as tf
 from scipy import ndimage
 from six import string_types
 from skimage import color
-import random
+
 
 def traverse_nested(input_lists, types=(list, tuple)):
     """
@@ -55,8 +55,10 @@ def average_multi_opt_gradients(multi_device_gradients):
         optimiser_names = sorted(multi_device_gradients[0])
         ave_gradients = dict()
         for opt_name in optimiser_names:
-            multi_device_grad = [device_gradient.get(opt_name)
-                                 for device_gradient in multi_device_gradients]
+            multi_device_grad = [
+                device_gradient.get(opt_name)
+                for device_gradient in multi_device_gradients
+            ]
             ave_gradients[opt_name] = average_gradients(multi_device_grad)
         return ave_gradients
     # multi_device_gradients is a list of N device_gradients, for N devices
@@ -106,8 +108,9 @@ def __average_grads(tower_grads):
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
-        grads = [tf.expand_dims(g, 0)
-                 for g, _ in grad_and_vars if g is not None]
+        grads = [
+            tf.expand_dims(g, 0) for g, _ in grad_and_vars if g is not None
+        ]
         if not grads:
             continue
         grad = tf.concat(grads, 0)
@@ -200,15 +203,18 @@ cache = {}
 
 
 def CachedFunction(func):
+
     def decorated(*args, **kwargs):
         key = (func, args, frozenset(kwargs.items()))
         if key not in cache:
             cache[key] = func(*args, **kwargs)
         return cache[key]
+
     return decorated
 
 
 def CachedFunctionByID(func):
+
     def decorated(*args, **kwargs):
         id_args = tuple(id(a) for a in args)
         id_kwargs = ((k, id(kwargs[k])) for k in sorted(kwargs.keys()))
@@ -216,6 +222,7 @@ def CachedFunctionByID(func):
         if key not in cache:
             cache[key] = func(*args, **kwargs)
         return cache[key]
+
     return decorated
 
 
@@ -274,13 +281,11 @@ def look_up_operations(type_str, supported):
 
     edit_distances = {}
     for supported_key in set_to_check:
-        edit_distance = damerau_levenshtein_distance(supported_key,
-                                                     type_str)
+        edit_distance = damerau_levenshtein_distance(supported_key, type_str)
         if edit_distance <= 3:
             edit_distances[supported_key] = edit_distance
     if edit_distances:
-        guess_at_correct_spelling = min(edit_distances,
-                                        key=edit_distances.get)
+        guess_at_correct_spelling = min(edit_distances, key=edit_distances.get)
         raise ValueError('By "{0}", did you mean "{1}"?\n'
                          '"{0}" is not a valid option.\n'
                          'Available options are {2}\n'.format(
@@ -327,7 +332,7 @@ def generate_color_palette(n):
     #shuffle with fixed key, to reuse same color palette
     random.shuffle(idx, lambda: 0.5)
     h_step = 1.0 / n
-    palette = np.array([ (h_step*i, 0.5, 0.5) for i in idx ])
+    palette = np.array([(h_step * i, 0.5, 0.5) for i in idx])
     palette = (color.hsv2rgb(palette) * 255).astype(np.uint8)
     return tf.constant(palette)
 
@@ -361,7 +366,7 @@ def otsu_threshold(img, nbins=256):
     for i in range(0, hist.shape[0] - 1):
         ratio_1 = mean_1[i] / weight_1[i]
         ratio_2 = mean_2[i + 1] / weight_2[i + 1]
-        target = weight_1[i] * weight_2[i + 1] * (ratio_1 - ratio_2) ** 2
+        target = weight_1[i] * weight_2[i + 1] * (ratio_1 - ratio_2)**2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold
@@ -392,8 +397,13 @@ def otsu_threshold(img, nbins=256):
 
 
 # Print iterations progress
-def print_progress_bar(iteration, total,
-                       prefix='', suffix='', decimals=1, length=10, fill='='):
+def print_progress_bar(iteration,
+                       total,
+                       prefix='',
+                       suffix='',
+                       decimals=1,
+                       length=10,
+                       fill='='):
     """
     Call in a loop to create terminal progress bar
 
@@ -405,8 +415,8 @@ def print_progress_bar(iteration, total,
     :param length: character length of bar (Int)
     :param fill: bar fill character (Str)
     """
-    percent = ("{0:." + str(decimals) + "f}").format(
-        100 * (iteration / float(total)))
+    percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                     (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bars = fill * filledLength + '-' * (length - filledLength)
     print('\r%s |%s| %s%% %s' % (prefix, bars, percent, suffix), end='\r')
@@ -424,6 +434,10 @@ def set_cuda_device(cuda_devices):
         # using Tensorflow default choice
         pass
 
+from types import SimpleNamespace
+
+def is_namespace(obj):
+    return isinstance(obj, (SimpleNamespace, argparse.Namespace, ParserNamespace))
 
 class ParserNamespace(object):
     """
@@ -442,6 +456,7 @@ class ParserNamespace(object):
     def update(self, **kwargs):
         self.__dict__.update(kwargs)
 
+
 def color_labels(x, palette):
     """
     Assume labels are [0,n)
@@ -453,12 +468,14 @@ def color_labels(x, palette):
     #tf_palette = tf.constant(palette)
     return tf.nn.embedding_lookup(params=palette, ids=x)
 
+
 def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
     """
     assigning CPU/GPU based on user specifications
     """
     # pylint: disable=no-name-in-module
     from tensorflow.python.client import device_lib
+
     #import pdb; pdb.set_trace()
     devices = device_lib.list_local_devices()
     n_local_gpus = sum([x.device_type == 'GPU' for x in devices])
@@ -470,8 +487,8 @@ def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
         if device == 'gpu' and device_id >= n_local_gpus:
             tf.compat.v1.logging.warning(
                 'trying to use gpu id %s, but only has %s GPU(s), '
-                'please set num_gpus to %s at most',
-                device_id, n_local_gpus, n_local_gpus)
+                'please set num_gpus to %s at most', device_id, n_local_gpus,
+                n_local_gpus)
             # raise ValueError
         return '/{}:{}'.format(device, device_id)
     # in inference: use gpu for everything whenever n_local_gpus
@@ -483,7 +500,8 @@ def tf_config(cuda_memory):
     tensorflow system configurations
     """
 
-    gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
+    gpu_options = tf.compat.v1.GPUOptions(
+        per_process_gpu_memory_fraction=cuda_memory, allow_growth=True)
 
     config = tf.compat.v1.ConfigProto(gpu_options=gpu_options)
 
@@ -491,5 +509,3 @@ def tf_config(cuda_memory):
     config.allow_soft_placement = True
 
     return config
-
-

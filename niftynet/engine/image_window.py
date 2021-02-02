@@ -3,9 +3,7 @@
 This module provides an interface for data elements to be generated
 by an image sampler.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import argparse
 import copy
@@ -15,6 +13,7 @@ import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
 
+from niftynet.utilities import util_common
 from niftynet.utilities.util_common import ParserNamespace
 
 N_SPATIAL = 3
@@ -62,10 +61,9 @@ class ImageWindow(object):
         """
         shapes = {}
         for name in list(self._shapes):
-            shapes[name] = tuple(
-                [self.n_samples] + list(self._shapes[name]))
-            shapes[LOCATION_FORMAT.format(name)] = tuple(
-                [self.n_samples] + [1 + N_SPATIAL * 2])
+            shapes[name] = tuple([self.n_samples] + list(self._shapes[name]))
+            shapes[LOCATION_FORMAT.format(name)] = tuple([self.n_samples] +
+                                                         [1 + N_SPATIAL * 2])
         return shapes
 
     @property
@@ -73,8 +71,8 @@ class ImageWindow(object):
         """
         :return: a dictionary of sampler output tensor shapes
         """
-        output_shapes = nest.map_structure_up_to(
-            self.tf_dtypes, tf.TensorShape, self.shapes)
+        output_shapes = nest.map_structure_up_to(self.tf_dtypes, tf.TensorShape,
+                                                 self.shapes)
         return output_shapes
 
     @property
@@ -141,10 +139,11 @@ class ImageWindow(object):
         :return: an ImageWindow instance
         """
         try:
-            image_shapes = nest.map_structure_up_to(
-                image_dtypes, tuple, image_shapes)
+            image_shapes = nest.map_structure_up_to(image_dtypes, tuple,
+                                                    image_shapes)
         except KeyError:
-            tf.compat.v1.logging.fatal('window_sizes wrong format %s', window_sizes)
+            tf.compat.v1.logging.fatal('window_sizes wrong format %s',
+                                       window_sizes)
             raise
         # create ImageWindow instance
         window_instance = cls(shapes=image_shapes, dtypes=image_dtypes)
@@ -158,6 +157,7 @@ class ImageWindow(object):
             full_shape = window_instance.match_image_shapes(image_shapes)
             window_instance.set_spatial_shape(full_shape)
         return window_instance
+
 
     def set_spatial_shape(self, spatial_window, source_names=None):
         """
@@ -175,14 +175,12 @@ class ImageWindow(object):
         if isinstance(spatial_window, dict):
             for name in list(spatial_window):
                 window_size = spatial_window[name]
-                if isinstance(window_size,
-                              (ParserNamespace, argparse.Namespace)):
+                if util_common.is_namespace(window_size):
                     window_size = vars(window_size)
                 if not isinstance(window_size, dict):
                     win_sizes[name] = tuple(window_size)
                 elif 'spatial_window_size' in window_size:
-                    win_sizes[name] = tuple(
-                        window_size['spatial_window_size'])
+                    win_sizes[name] = tuple(window_size['spatial_window_size'])
                 else:
                     raise ValueError(
                         'window_sizes should be a nested dictionary')
@@ -200,16 +198,18 @@ class ImageWindow(object):
                     spatial_shapes[name] = \
                         tuple(int(win_size) for win_size in win_sizes[name])
             except ValueError:
-                tf.compat.v1.logging.fatal("spatial window should be an array of int")
+                tf.compat.v1.logging.fatal(
+                    "spatial window should be an array of int")
                 raise
 
-        spatial_shapes = nest.map_structure_up_to(
-            self._dtypes, tuple, spatial_shapes)
+        spatial_shapes = nest.map_structure_up_to(self._dtypes, tuple,
+                                                  spatial_shapes)
 
         self._shapes = {
             name: _complete_partial_window_sizes(spatial_shapes[name],
                                                  self._shapes[name])
-            for name in list(self._shapes)}
+            for name in list(self._shapes)
+        }
 
         # update based on the latest spatial shapes
         self.has_dynamic_shapes = self._check_dynamic_shapes()
@@ -247,7 +247,8 @@ class ImageWindow(object):
         try:
             return self._placeholders_dict[LOCATION_FORMAT.format(name)]
         except TypeError:
-            tf.compat.v1.logging.fatal('call placeholders_dict to initialise first')
+            tf.compat.v1.logging.fatal(
+                'call placeholders_dict to initialise first')
             raise
 
     def image_data_placeholder(self, name):
@@ -262,7 +263,8 @@ class ImageWindow(object):
         try:
             return self._placeholders_dict[name]
         except TypeError:
-            tf.compat.v1.logging.fatal('call placeholders_dict to initialise first')
+            tf.compat.v1.logging.fatal(
+                'call placeholders_dict to initialise first')
             raise
 
     def match_image_shapes(self, image_shapes):
@@ -281,8 +283,8 @@ class ImageWindow(object):
         for name in list(self._shapes):
             static_window_shapes[name] = tuple(
                 win_size if win_size else image_shape
-                for (win_size, image_shape) in
-                zip(list(self._shapes[name]), image_shapes[name]))
+                for (win_size, image_shape
+                    ) in zip(list(self._shapes[name]), image_shapes[name]))
         return static_window_shapes
 
     def _update_placeholders_dict(self, n_samples=1):
@@ -364,14 +366,15 @@ def _read_window_sizes(input_mod_list, input_window_sizes):
         try:
             win_sizes = [int(win_size) for win_size in input_window_sizes]
         except ValueError:
-            tf.compat.v1.logging.fatal("spatial window should be an array of int")
+            tf.compat.v1.logging.fatal(
+                "spatial window should be an array of int")
             raise
         # single window size for all inputs
         for name in set(input_mod_list):
             window_sizes[name] = win_sizes
         return window_sizes
 
-    if isinstance(input_window_sizes, (ParserNamespace, argparse.Namespace)):
+    if util_common.is_namespace(input_window_sizes):
         input_window_sizes = vars(input_window_sizes)
 
     if not isinstance(input_window_sizes, dict):
